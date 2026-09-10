@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "browser": "playwright test",
-    "typecheck": "tsc --noEmit -p tsconfig.json"
+    "typecheck": "next typegen && tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
     "@verifytrust/sdk": "workspace:*",
