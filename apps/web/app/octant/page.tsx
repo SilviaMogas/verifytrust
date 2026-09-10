@@ -8,7 +8,7 @@ const sections: [string, string][] = [
   ["WHAT THE PROTOCOL PROVES", "Possesses a valid credential. Issued by an approved merchant. Corresponds to the product reviewed. Purchase eligible. Knows customer secret. Transaction data not revealed. Valid nullifier generated. The same purchase cannot produce multiple verified reviews for the same scope."],
   ["WHAT THE PROTOCOL NEVER REVEALS", "Identity · Email · Receipt · Order number · Payment details · Transaction ID · Nonce · Secret · Raw credential · Purchase history"],
   ["WHY ETHEREUM", "Neutral public verification and durable nullifier enforcement make the claim portable across applications."],
-  ["LIVE DEMO", "Generate a credential, prove eligibility locally, and submit a real Anvil transaction."],
+  ["LIVE DEMO", "Generate a credential, prove eligibility locally, and submit a real Ethereum transaction (Sepolia testnet or local Anvil)."],
   ["SOURCE CODE", "Open source repository: github.com/SilviaMogas/verifytrust"],
   ["CIRCUIT", "packages/circuits/src/main.nr · public inputs: merchant ID, product ID, issuer key hash, nullifier, protocol version. Constraints bind merchant and product, issuer approval hash, Schnorr signature, nullifier, protocol version, and nonzero nonce and secret."],
   ["CONTRACTS", "IssuerRegistry approves issuers. ProofOfReviewVerifier wraps the generated verifier. VerifyTrustRegistry enforces approval, validity, replay prevention, and review registration."],

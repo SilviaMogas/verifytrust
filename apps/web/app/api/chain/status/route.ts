@@ -19,7 +19,20 @@ export async function GET() {
     const response = await fetch(rpc, { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify({jsonrpc:"2.0",id:1,method:"eth_chainId",params:[]}), cache:"no-store" });
     if (!response.ok) throw new Error("RPC unavailable");
     const result = await response.json();
+    if (result.error || typeof result.result !== "string") throw new Error("RPC unavailable");
     const actualChainId = Number.parseInt(result.result, 16);
+    if (!Number.isFinite(actualChainId)) throw new Error("RPC unavailable");
+    if (actualChainId !== chainId) {
+      return NextResponse.json({
+        configured: false,
+        error: "RPC chain mismatch",
+        chainId: actualChainId,
+        expectedChainId: chainId,
+        network: actualChainId === 11155111 ? "Ethereum Sepolia" : "Local Anvil (dev)",
+        relayerAddress,
+        explorerUrl: actualChainId === 11155111 ? "https://sepolia.etherscan.io" : undefined,
+      });
+    }
     return NextResponse.json({ configured: true, chainId: actualChainId, network: actualChainId === 11155111 ? "Ethereum Sepolia" : "Local Anvil (dev)", registryAddress: deployment?.verifyTrustRegistry, verifierAddress: deployment?.proofVerifier, issuerRegistryAddress: deployment?.issuerRegistry, relayerAddress, deployed: Boolean(deployment), explorerUrl: actualChainId === 11155111 ? "https://sepolia.etherscan.io" : undefined });
   } catch { return NextResponse.json({ configured: false, chainId, network, registryAddress: deployment?.verifyTrustRegistry, verifierAddress: deployment?.proofVerifier, issuerRegistryAddress: deployment?.issuerRegistry, relayerAddress, deployed: Boolean(deployment), explorerUrl }); }
 }

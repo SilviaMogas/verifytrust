@@ -74,7 +74,13 @@ export default function Demo() {
       const body = await response.json();
       if (!response.ok || !body.hash) {
         if (duplicate && body.errorName === "NullifierAlreadyUsed") { setDuplicateAttempted(true); setDuplicateReason("NullifierAlreadyUsed"); setMessage("NULLIFIER REJECTED"); }
-        else setMessage(body.error || "ETHEREUM NOT CONFIGURED — NOT VERIFIED");
+        else {
+          if (body.txHash) {
+            setTxHash(body.txHash);
+            setChainInfo({ chainId: body.chainId, network: body.network, explorerUrl: body.explorerUrl, registryAddress: body.registryAddress });
+          }
+          setMessage(body.error || "ETHEREUM NOT CONFIGURED — NOT VERIFIED");
+        }
         return;
       }
       setTxHash(body.hash); setChainInfo({ chainId: body.chainId, network: body.network, explorerUrl: body.explorerUrl, registryAddress: body.registryAddress }); setStep(6); setMessage("ethereum verified");
@@ -106,7 +112,7 @@ export default function Demo() {
       {step === 3 && !proof && <><div className="proof-pipeline"><span className={busy ? "active" : ""}>PRIVATE PURCHASE DATA</span><b>↓</b><span className={busy ? "active" : ""}>LOCAL ZK PROVER</span><b>↓</b><span>PUBLIC PROOF</span></div><button className="button" disabled={busy} onClick={prove}>{busy ? "PROVING…" : "GENERATE PRIVATE PROOF"}</button></>}
       {step === 3 && proof && <><div className="proof-pipeline"><span>PRIVATE PURCHASE DATA</span><b>↓</b><span>LOCAL ZK PROVER</span><b>↓</b><span className="active">PUBLIC PROOF</span></div><p className="status">{message || "VERIFIED LOCALLY"}{proofMs ? ` · ${proofMs} ms` : ""}</p><div className="public-inputs">{proof.publicInputs.map((value, index) => <div key={publicInputLabels[index]}><span>{publicInputLabels[index]}</span><code>{value}</code></div>)}</div><p className="mono">PROOF SIZE · {Math.round((proof.proof.length - 2) / 2)} BYTES</p><button className="button" onClick={() => setStep(4)}>WRITE REVIEW</button></>}
       {step === 4 && <><textarea value={review} onChange={event => setReview(event.target.value)} /><div className="actions">{[1, 2, 3, 4, 5].map(value => <button className={value === rating ? "button" : "button secondary"} key={value} onClick={() => setRating(value)}>{value} ★</button>)}</div><button className="button" onClick={makeCommitment}>COMPUTE REVIEW COMMITMENT</button></>}
-      {step === 5 && commitment && <><p className="mono">COMMITMENT · {commitment.commitment}<br />Review text stays offchain.</p><button className="button" disabled={busy} onClick={() => submit()}>VERIFY ON ETHEREUM</button></>}
+      {step === 5 && commitment && <><p className="mono">COMMITMENT · {commitment.commitment}<br />Review text stays offchain.</p><button className="button" disabled={busy} onClick={() => submit()}>VERIFY ON ETHEREUM</button>{txHash && chainInfo && <p className="status">TRANSACTION HASH · {chainInfo.explorerUrl ? <a href={`${chainInfo.explorerUrl}/tx/${txHash}`} target="_blank" rel="noreferrer">{txHash} ↗</a> : txHash}</p>}</>}
       {step === 6 && <><div className="badges"><span>VERIFIED PURCHASE</span><span>PRIVACY PROTECTED</span><span>ETHEREUM VERIFIED</span></div><div className="details"><div>NETWORK<strong>{chainInfo?.network}</strong></div><div>CONTRACT ADDRESS<strong className="mono">{chainInfo?.registryAddress}</strong></div><div>PROOF STATUS<strong>VERIFIED</strong></div><div>NULLIFIER STATUS<strong>USED</strong></div><div>VERIFICATION TRANSACTION<strong className="mono">{chainInfo?.explorerUrl ? <a href={`${chainInfo.explorerUrl}/tx/${txHash}`} target="_blank" rel="noreferrer">{txHash} ↗</a> : txHash}</strong></div></div><button className="button" onClick={checkDuplicate}>ATTEMPT DUPLICATE REVIEW</button></>}
       {step === 7 && <><div className={`duplicate-card${duplicateAttempted ? "" : " pending"}`}>{duplicateAttempted ? <><strong>REVIEW ALREADY USED</strong><strong>NULLIFIER REJECTED</strong><span className="mono">{proof?.nullifier}</span><span>{duplicateReason}</span></> : <><strong>READY TO TEST DUPLICATE</strong><span className="mono">{proof?.nullifier}</span><span>Click RESUBMIT SAME PROOF to confirm the onchain rejection.</span></>}</div><p className="status">nullifier already used onchain: {nullifierUsed === undefined ? "checking…" : String(nullifierUsed)}</p><button className="button" disabled={busy} onClick={() => submit(true)}>RESUBMIT SAME PROOF</button>{duplicateAttempted && <p className="status">{message}</p>}</>}
       {message && step !== 7 && <p className="status">{message}</p>}
