@@ -6,11 +6,21 @@ import { countDuplicateAttempts, listReviews } from "../../../lib/store";
 export const revalidate = 60;
 
 export async function GET() {
-  const reviews = await listReviews();
-  const offchain = {
-    publishedReviews: reviews.length,
-    preventedDuplicates: await countDuplicateAttempts(),
-  };
+  let reviews: Awaited<ReturnType<typeof listReviews>> = [];
+  let offchain: {
+    publishedReviews: number;
+    preventedDuplicates: number;
+  } | null = null;
+  try {
+    reviews = await listReviews();
+    offchain = {
+      publishedReviews: reviews.length,
+      preventedDuplicates: await countDuplicateAttempts(),
+    };
+  } catch {
+    reviews = [];
+    offchain = null;
+  }
   try {
     const chain = await getOnChainMetrics({
       rpcUrl:
@@ -28,8 +38,8 @@ export async function GET() {
   } catch {
     return NextResponse.json({
       chain: {
-        totalVerifications: offchain.publishedReviews,
-        registryTotalVerifications: offchain.publishedReviews,
+        totalVerifications: offchain?.publishedReviews ?? 0,
+        registryTotalVerifications: offchain?.publishedReviews ?? 0,
         merchants: new Set(reviews.map((review) => review.merchantSlug)).size,
         lastVerifiedAt: null,
         registryAddress:
