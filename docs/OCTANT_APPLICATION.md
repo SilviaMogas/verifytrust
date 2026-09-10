@@ -33,6 +33,17 @@ PROVE THE PURCHASE. PROTECT THE PERSON.
 | Contracts | `packages/contracts/src/` |
 | Sepolia deployment | [VerifyTrustRegistry on Sepolia](https://sepolia.etherscan.io/address/0x0F95E2454F5AEdb7aa879A1b2b41d13643141C45) · `packages/contracts/deployments/11155111.json` |
 
+## Eligibility criteria → evidence
+
+| Criterion | Evidence |
+| --- | --- |
+| Open source | Apache-2.0 license in `LICENSE` and the repository. |
+| Independently buildable | `pnpm verify:deployment` rebuilds the circuit and verifier, checks `CHECKSUMS.txt`, builds the Solidity contracts, and compares the Sepolia bytecode. |
+| Working software | Live demo at https://verifytrust2.vercel.app and the Longhand pilot at `/merchant/longhand`, including the Stripe test-mode purchase and verified-review flow. |
+| Verifiable traction | `/api/stats` reports Sepolia `ReviewVerified` event totals and distinct merchants, with the published review transaction [0x765e7b93…](https://sepolia.etherscan.io/tx/0x765e7b93622f61e37a12f6382cae9bb8fba0759f7bda7ec23f3ee9de5544a745). The requested `0xec1219…` prefix was checked and does not resolve to a VerifyTrust Sepolia transaction; it is not claimed as project evidence. |
+| Exclusion criteria | Testnet-only deployment, explicit limitations, open-source code, privacy documentation, and the demo-only issuer/relayer threat model are documented rather than presented as production guarantees. |
+| Repository status | repository visibility: to be set public before submission |
+
 ## The privacy problem
 
 Review verification today usually works by linking a review to a person:
@@ -110,8 +121,7 @@ work.
   `bb write_solidity_verifier`, `forge test`, `pnpm e2e` — documented in
   `docs/ARCHITECTURE.md` with pinned toolchain versions and artifact checksums
   (`packages/circuits/target/CHECKSUMS.txt`).
-- Repository visibility: `[FILL — must be PUBLIC before submission; see
-  OCTANT_READINESS.md blocker]`.
+- repository visibility: to be set public before submission.
 
 ## Public-good value: a reusable primitive
 

@@ -8,6 +8,7 @@
     "dev:local": "bash scripts/dev-local.sh",
     "e2e": "pnpm --filter @verifytrust/circuits e2e",
     "deploy:sepolia": "bash scripts/deploy-sepolia.sh",
+    "verify:deployment": "bash scripts/verify-deployment.sh",
     "lint": "pnpm --filter web lint",
     "test": "pnpm -r test && (cd packages/contracts && forge test -vv) && (cd packages/circuits && nargo test)",
     "typecheck": "pnpm -r typecheck"
