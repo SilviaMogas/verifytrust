@@ -14,6 +14,7 @@ import {
   type Credential,
   type ProofOfReview,
 } from "@verifytrust/sdk";
+import Link from "next/link";
 import { Footer, Nav } from "../components";
 
 type PrivateData = { email: string; orderId: string; receipt: string };
@@ -44,8 +45,8 @@ export default function Demo() {
     setBusy(true); setMessage("");
     try {
       const secret = randomHex32();
-      const data = { email: "customer@example.com", orderId: `NOVA-${Date.now()}`, receipt: "€39.00" };
-      const response = await fetch("/api/issuer/issue", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ merchantId: fieldFromString("nova-goods"), productId: fieldFromString("nova-travel-bottle"), purchaseTimestamp: Math.floor(Date.now() / 1000), customerSecret: secret }) });
+      const data = { email: "customer@example.com", orderId: `LONGHAND-DEMO-${Date.now()}`, receipt: "$1.00 (demo)" };
+      const response = await fetch("/api/issuer/issue", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ merchantId: fieldFromString("longhand"), productId: fieldFromString("longhand-verified-membership"), purchaseTimestamp: Math.floor(Date.now() / 1000), customerSecret: secret }) });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error);
       setCredential({ ...body.credential, purchaseTimestamp: BigInt(body.credential.purchaseTimestamp) });
@@ -103,12 +104,13 @@ export default function Demo() {
 
   return <main className="shell" key={reset}>
     <Nav />
-    <section className="hero"><div className="eyebrow">NOVA GOODS · DEMO MERCHANT</div><h1>PROVE THE PURCHASE.<br /><span className="accent">PROTECT THE PERSON.</span></h1><p>Your purchase stays private. The proof becomes verifiable.</p></section>
+    <section className="demo-intro"><div><div className="eyebrow">TECHNICAL DEMO</div><p>This page demonstrates the cryptographic process behind VerifyTrust. For the customer experience, visit the review marketplace.</p></div><Link className="button secondary" href="/marketplace">OPEN MARKETPLACE</Link></section>
+    <section className="hero"><div className="eyebrow">LONGHAND · TECHNICAL DEMO</div><h1>PROVE THE PURCHASE.<br /><span className="accent">PROTECT THE PERSON.</span></h1><p>Your purchase stays private. The proof becomes verifiable.</p></section>
     <section className="section"><div className="pipeline">{steps.map((label, index) => <span key={label} className={step === index + 1 ? "accent" : ""}>{String(index + 1).padStart(2, "0")} {label}</span>)}</div></section>
     <section className="section"><div className="card">
       <div className="label">STEP {step} / 07</div><h2>{steps[step - 1]}</h2>
-      {step === 1 && <><p><strong>NOVA GOODS</strong> · DEMO MERCHANT<br />Product: NOVA Travel Bottle</p><button className="button" disabled={busy} onClick={issue}>GENERATE DEMO PURCHASE CREDENTIAL</button><p className="status">demo issuer sees the customer secret; blind issuance is future work</p></>}
-      {step === 2 && privateData && credential && <><p>Private data is generated and held locally. Values never leave this browser / never written onchain.</p>{[["Customer secret", credential.customerSecret], ["Receipt", privateData.receipt], ["Order ID", privateData.orderId], ["Email", privateData.email], ["Purchase credential", JSON.stringify(credential, (_, value) => typeof value === "bigint" ? value.toString() : value)]].map(([label, value]) => <div className="step" key={label}><span className="stepnum">PRIVATE</span><span><strong>{label}</strong><br /><span className="mono">{revealed ? String(value) : "••••••••••••••••"}</span></span></div>)}<button className="button" onClick={() => setRevealed(!revealed)}>{revealed ? "HIDE VALUES" : "REVEAL VALUES"}</button><button className="button secondary" onClick={() => setStep(3)}>CONTINUE</button></>}
+      {step === 1 && <><p><strong>LONGHAND</strong> · Longhand Verified Membership ($1)</p><div className="provenance"><strong>DEMO PROVENANCE</strong><p>This demo issues a LOCALLY GENERATED demo credential — not a real Stripe purchase. Ethereum verification uses the configured network (Sepolia) or a development fallback; fallback data is never a real purchase.</p></div><button className="button" disabled={busy} onClick={issue}>GENERATE DEMO PURCHASE CREDENTIAL</button><p className="status">demo issuer sees the customer secret; blind issuance is future work</p></>}
+      {step === 2 && privateData && credential && <><p>Private data is generated and held locally. Values never leave this browser / never written onchain.</p><div className="provenance"><strong>DEMO PROVENANCE</strong><p>This demo issues a LOCALLY GENERATED demo credential — not a real Stripe purchase. Ethereum verification uses the configured network (Sepolia) or a development fallback; fallback data is never a real purchase.</p></div>{[["Customer secret", credential.customerSecret], ["Receipt", privateData.receipt], ["Order ID", privateData.orderId], ["Email", privateData.email], ["Purchase credential", JSON.stringify(credential, (_, value) => typeof value === "bigint" ? value.toString() : value)]].map(([label, value]) => <div className="step" key={label}><span className="stepnum">PRIVATE</span><span><strong>{label}</strong><br /><span className="mono">{revealed ? String(value) : "••••••••••••••••"}</span></span></div>)}<button className="button" onClick={() => setRevealed(!revealed)}>{revealed ? "HIDE VALUES" : "REVEAL VALUES"}</button><button className="button secondary" onClick={() => setStep(3)}>CONTINUE</button></>}
       {step === 3 && !proof && <><div className="proof-pipeline"><span className={busy ? "active" : ""}>PRIVATE PURCHASE DATA</span><b>↓</b><span className={busy ? "active" : ""}>LOCAL ZK PROVER</span><b>↓</b><span>PUBLIC PROOF</span></div><button className="button" disabled={busy} onClick={prove}>{busy ? "PROVING…" : "GENERATE PRIVATE PROOF"}</button></>}
       {step === 3 && proof && <><div className="proof-pipeline"><span>PRIVATE PURCHASE DATA</span><b>↓</b><span>LOCAL ZK PROVER</span><b>↓</b><span className="active">PUBLIC PROOF</span></div><p className="status">{message || "VERIFIED LOCALLY"}{proofMs ? ` · ${proofMs} ms` : ""}</p><div className="public-inputs">{proof.publicInputs.map((value, index) => <div key={publicInputLabels[index]}><span>{publicInputLabels[index]}</span><code>{value}</code></div>)}</div><p className="mono">PROOF SIZE · {Math.round((proof.proof.length - 2) / 2)} BYTES</p><button className="button" onClick={() => setStep(4)}>WRITE REVIEW</button></>}
       {step === 4 && <><textarea value={review} onChange={event => setReview(event.target.value)} /><div className="actions">{[1, 2, 3, 4, 5].map(value => <button className={value === rating ? "button" : "button secondary"} key={value} onClick={() => setRating(value)}>{value} ★</button>)}</div><button className="button" onClick={makeCommitment}>COMPUTE REVIEW COMMITMENT</button></>}

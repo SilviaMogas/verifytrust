@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Verify Trust — Proof of Review",
+  title: "VerifyTrust — Verified reviews, private by design",
   description: "Privacy-preserving proof of purchase eligibility.",
 };
 
