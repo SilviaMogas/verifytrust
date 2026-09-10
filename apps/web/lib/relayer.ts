@@ -21,10 +21,23 @@ function errorSelector(error: unknown): string | undefined {
   const visit = (value: unknown, depth: number): string | undefined => {
     if (depth > 5 || value === null || value === undefined) return undefined;
     if (typeof value === "string") {
-      return value.match(/0x[0-9a-fA-F]{8,}/g)?.[0]?.slice(0, 10).toLowerCase();
+      if (value.includes("NullifierAlreadyUsed")) {
+        return nullifierAlreadyUsedSelector;
+      }
+      const signature = value.match(
+        /signature(?:["']?\s*:\s*|\s+)(0x[0-9a-fA-F]{8})\b/i,
+      );
+      if (signature) return signature[1].toLowerCase();
+      if (/^0x[0-9a-fA-F]{8}$/.test(value)) return value.toLowerCase();
+      if (/^0x[0-9a-fA-F]{74}$/.test(value)) return value.slice(0, 10).toLowerCase();
+      return undefined;
     }
     if (typeof value !== "object" || seen.has(value)) return undefined;
     seen.add(value);
+    for (const key of ["signature", "shortMessage", "message", "data"]) {
+      const selector = visit((value as Record<string, unknown>)[key], depth + 1);
+      if (selector) return selector;
+    }
     if (
       "errorName" in value &&
       (value as { errorName?: unknown }).errorName === "NullifierAlreadyUsed"
@@ -109,6 +122,13 @@ export async function submitToRelayer({
       account,
       chain,
       transport: http(rpc),
+    });
+    await publicClient.simulateContract({
+      account,
+      address: deployment.verifyTrustRegistry,
+      abi: verifyTrustRegistryAbi,
+      functionName: "submitVerifiedReview",
+      args: [proof, publicInputs, reviewCommitment],
     });
     const hash = await walletClient.writeContract({
       account,

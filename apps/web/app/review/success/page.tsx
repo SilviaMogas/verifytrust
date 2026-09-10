@@ -101,8 +101,7 @@ export default async function SuccessPage({ searchParams }: SuccessPageProps) {
   } catch {
     return <PaymentNotConfirmed />;
   }
-  const paid =
-    session.payment_status === "paid" || session.status === "complete";
+  const paid = session.payment_status === "paid";
   if (!paid) return <PaymentNotConfirmed />;
   if (session.metadata?.credential_issued === "true") {
     return <EligibilityUsed />;

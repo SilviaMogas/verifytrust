@@ -47,8 +47,7 @@ export async function POST(request: Request) {
       400,
     );
   }
-  const paid =
-    session.payment_status === "paid" || session.status === "complete";
+  const paid = session.payment_status === "paid";
   if (!paid) {
     return customerError(
       "payment_not_confirmed",
@@ -77,11 +76,13 @@ export async function POST(request: Request) {
       400,
     );
   }
+  let metadataUpdated = false;
   try {
     await updateSessionMetadata(body.sessionId, {
       credential_issued: "true",
       issued_at: new Date().toISOString(),
     });
+    metadataUpdated = true;
     const chainId = Number(process.env.CHAIN_ID || 31337);
     const issuerKey =
       process.env.DEMO_ISSUER_PRIVATE_KEY ??
@@ -108,6 +109,16 @@ export async function POST(request: Request) {
       provenance: "stripe",
     });
   } catch {
+    if (metadataUpdated) {
+      try {
+        await updateSessionMetadata(body.sessionId, {
+          credential_issued: "false",
+          issued_at: "",
+        });
+      } catch {
+        // Best effort: preserve the customer-safe issuance error.
+      }
+    }
     return customerError(
       "credential_issuance_failed",
       "We could not issue your private purchase credential.",
