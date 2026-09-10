@@ -58,7 +58,7 @@ Deployment:
 Real end-to-end verification:
 
 - Successful submission: [`0xbe444629566128c7c8374eafde21f7004dc64832b225afeb6e615c9e9aaf3edb`](https://sepolia.etherscan.io/tx/0xbe444629566128c7c8374eafde21f7004dc64832b225afeb6e615c9e9aaf3edb)
-- Replay simulation reverted with `NullifierAlreadyUsed` for the consumed nullifier.
+- Replay transaction: [`0xd6a5a48f442ba445d866181cd1f9e2bc90cac03b5286eefd95a55ec41883db20`](https://sepolia.etherscan.io/tx/0xd6a5a48f442ba445d866181cd1f9e2bc90cac03b5286eefd95a55ec41883db20) (mined with status `0`; the same calldata reverts with `NullifierAlreadyUsed`).
 
 The deployment is testnet-only and uses a relayer key supplied through
 environment configuration. Production hosting and relayer operations remain
