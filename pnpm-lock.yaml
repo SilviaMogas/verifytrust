@@ -115,6 +115,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@verifytrust/merchant-sdk':
+        specifier: workspace:*
+        version: link:../../packages/merchant-sdk
       '@verifytrust/sdk':
         specifier: workspace:*
         version: link:../../packages/sdk
