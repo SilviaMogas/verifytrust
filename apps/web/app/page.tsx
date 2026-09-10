@@ -3,7 +3,7 @@ import { Footer, Nav } from "./components";
 import { products } from "../lib/catalog";
 import { marketplaceMetrics } from "../lib/reviews";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export default async function Home() {
   const metrics = await marketplaceMetrics();

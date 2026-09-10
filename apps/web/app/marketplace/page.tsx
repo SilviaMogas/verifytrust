@@ -3,7 +3,7 @@ import { merchants, products } from "../../lib/catalog";
 import { marketplaceMetrics, reviewStats } from "../../lib/reviews";
 import MarketplaceBrowser from "./MarketplaceBrowser";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export default async function Marketplace() {
   const stats = Object.fromEntries(

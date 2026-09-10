@@ -1,5 +1,6 @@
 import { merchants, products } from "./catalog";
 import { countDuplicateAttempts, listReviews as listStoredReviews } from "./store";
+import { fieldFromString, getOnChainMetrics } from "@verifytrust/sdk";
 
 export type PublishedReview = {
   id: string;
@@ -52,11 +53,11 @@ export async function reviewStats(productSlug: string) {
 export async function marketplaceMetrics() {
   const reviews = await listReviews();
   try {
-    const { getOnChainMetrics } = await import("@verifytrust/sdk");
     const chain = await getOnChainMetrics({
       rpcUrl:
         process.env.RPC_URL ?? "https://ethereum-sepolia-rpc.publicnode.com",
       chainId: Number(process.env.CHAIN_ID || 11155111),
+      merchantIds: merchants.map((merchant) => fieldFromString(merchant.slug)),
     });
     return {
       merchants: merchants.length,

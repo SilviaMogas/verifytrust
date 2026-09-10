@@ -3,7 +3,7 @@ import { getOnChainMetricsFromClient } from "./metrics.js";
 import { deployments } from "./deployments.js";
 
 describe("on-chain metrics", () => {
-  it("counts verifications and distinct merchants from ReviewVerified logs", async () => {
+  it("filters verifications by merchant and preserves the registry total", async () => {
     const client = {
       getLogs: vi.fn().mockResolvedValue([
         {
@@ -18,27 +18,34 @@ describe("on-chain metrics", () => {
             verifiedAt: 200n,
           },
         },
-        {
-          args: {
-            merchantId: `0x${"22".repeat(32)}`,
-            verifiedAt: 150n,
-          },
-        },
       ]),
+      readContract: vi.fn().mockResolvedValue(5n),
     };
 
     await expect(
-      getOnChainMetricsFromClient({ client, chainId: 11155111 }),
+      getOnChainMetricsFromClient({
+        client,
+        chainId: 11155111,
+        merchantIds: [`0x${"11".repeat(32)}`],
+      }),
     ).resolves.toEqual({
-      totalVerifications: 3,
-      merchants: 2,
+      totalVerifications: 2,
+      merchants: 1,
       lastVerifiedAt: 200,
+      registryTotalVerifications: 5,
       registryAddress: deployments[11155111].verifyTrustRegistry,
     });
     expect(client.getLogs).toHaveBeenCalledWith(
       expect.objectContaining({
         address: deployments[11155111].verifyTrustRegistry,
         fromBlock: 11675562n,
+        args: { merchantId: [`0x${"11".repeat(32)}`] },
+      }),
+    );
+    expect(client.readContract).toHaveBeenCalledWith(
+      expect.objectContaining({
+        address: deployments[11155111].verifyTrustRegistry,
+        functionName: "verificationCount",
       }),
     );
   });

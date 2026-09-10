@@ -1,4 +1,4 @@
-import { deployments, getOnChainMetrics } from "@verifytrust/sdk";
+import { deployments, fieldFromString, getOnChainMetrics } from "@verifytrust/sdk";
 import { NextResponse } from "next/server";
 import { merchants, products } from "../../../lib/catalog";
 import { countDuplicateAttempts, listReviews } from "../../../lib/store";
@@ -16,6 +16,7 @@ export async function GET() {
       rpcUrl:
         process.env.RPC_URL ?? "https://ethereum-sepolia-rpc.publicnode.com",
       chainId: Number(process.env.CHAIN_ID || 11155111),
+      merchantIds: merchants.map((merchant) => fieldFromString(merchant.slug)),
     });
     return NextResponse.json({
       chain,
@@ -28,6 +29,7 @@ export async function GET() {
     return NextResponse.json({
       chain: {
         totalVerifications: offchain.publishedReviews,
+        registryTotalVerifications: offchain.publishedReviews,
         merchants: new Set(reviews.map((review) => review.merchantSlug)).size,
         lastVerifiedAt: null,
         registryAddress:
