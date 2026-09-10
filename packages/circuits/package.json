@@ -5,6 +5,7 @@
   "scripts": {
     "build": "bash scripts/build.sh",
     "test": "nargo test",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
     "e2e": "tsx e2e/index.ts"
   },
   "dependencies": {

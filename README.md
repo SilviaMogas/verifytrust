@@ -24,6 +24,18 @@ pnpm dev:local
 Then open `http://127.0.0.1:3000/demo`. The local orchestration starts Anvil,
 deploys the contracts, approves the demo issuer, and starts Next.js.
 
+For the deployed Sepolia contracts, copy `apps/web/.env.example`, set
+`RPC_URL=https://ethereum-sepolia-rpc.publicnode.com`,
+`CHAIN_ID=11155111`, `RELAYER_PRIVATE_KEY`, and
+`DEMO_ISSUER_PRIVATE_KEY`, then run:
+
+```bash
+pnpm deploy:sepolia
+```
+
+Never commit private keys or `.env` files. The committed Sepolia deployment
+artifact is `packages/contracts/deployments/11155111.json`.
+
 ## Repository structure
 
 ```text
@@ -35,6 +47,7 @@ packages/merchant-sdk/     @verifytrust/merchant-sdk
 examples/demo-merchant/   NOVA GOODS example issuer
 docs/                      Architecture and security documentation
 scripts/dev-local.sh       Local Anvil/Next orchestration
+scripts/deploy-sepolia.sh  Sepolia contract deployment
 ```
 
 ## Documentation

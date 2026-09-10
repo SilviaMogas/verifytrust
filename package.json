@@ -7,8 +7,9 @@
     "dev": "pnpm --filter web dev",
     "dev:local": "bash scripts/dev-local.sh",
     "e2e": "pnpm --filter @verifytrust/circuits e2e",
-    "lint": "echo 'Lint not implemented'",
-    "test": "cd packages/contracts && /home/ubuntu/.foundry/bin/forge test -vv",
-    "typecheck": "echo 'Type checking not implemented'"
+    "deploy:sepolia": "bash scripts/deploy-sepolia.sh",
+    "lint": "pnpm --filter web lint",
+    "test": "pnpm -r test && forge test -vv --root packages/contracts && nargo test packages/circuits",
+    "typecheck": "pnpm -r typecheck"
   }
 }

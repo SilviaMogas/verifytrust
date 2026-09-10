@@ -31,7 +31,7 @@ PROVE THE PURCHASE. PROTECT THE PERSON.
 | License | Apache-2.0 |
 | Circuit | `packages/circuits/src/main.nr` |
 | Contracts | `packages/contracts/src/` |
-| Sepolia deployment | see `packages/contracts/deployments/11155111.json` (`NOT DEPLOYED` if the file is absent) |
+| Sepolia deployment | [VerifyTrustRegistry on Sepolia](https://sepolia.etherscan.io/address/0x0F95E2454F5AEdb7aa879A1b2b41d13643141C45) · `packages/contracts/deployments/11155111.json` |
 
 ## The privacy problem
 

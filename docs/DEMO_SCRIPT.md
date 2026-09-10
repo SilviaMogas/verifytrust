@@ -44,7 +44,22 @@ demo issuer approved, and starts Next.js on `http://127.0.0.1:3000`. Open
 
 ## Sepolia
 
-TBD: addresses to be filled.
+Network: **Ethereum Sepolia** (`11155111`)
 
-The repository currently contains a local `31337` deployment artifact. Sepolia
-deployment addresses and a production relayer configuration are **NOT IMPLEMENTED**.
+Deployment:
+
+| Contract | Address |
+| --- | --- |
+| HonkVerifier | [`0xE94B6012d80687a62CD140D0bf65E40628D59640`](https://sepolia.etherscan.io/address/0xE94B6012d80687a62CD140D0bf65E40628D59640) |
+| ProofOfReviewVerifier | [`0x6936fD59d9fa3e8b1fe3Fe1E74f3fCa9a307e61E`](https://sepolia.etherscan.io/address/0x6936fD59d9fa3e8b1fe3Fe1E74f3fCa9a307e61E) |
+| IssuerRegistry | [`0x285696706abe3f7Caa4b31Fa94e18613d06b218c`](https://sepolia.etherscan.io/address/0x285696706abe3f7Caa4b31Fa94e18613d06b218c) |
+| VerifyTrustRegistry | [`0x0F95E2454F5AEdb7aa879A1b2b41d13643141C45`](https://sepolia.etherscan.io/address/0x0F95E2454F5AEdb7aa879A1b2b41d13643141C45) |
+
+Real end-to-end verification:
+
+- Successful submission: [`0xbe444629566128c7c8374eafde21f7004dc64832b225afeb6e615c9e9aaf3edb`](https://sepolia.etherscan.io/tx/0xbe444629566128c7c8374eafde21f7004dc64832b225afeb6e615c9e9aaf3edb)
+- Replay simulation reverted with `NullifierAlreadyUsed` for the consumed nullifier.
+
+The deployment is testnet-only and uses a relayer key supplied through
+environment configuration. Production hosting and relayer operations remain
+future work.
