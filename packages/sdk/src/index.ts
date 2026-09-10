@@ -2,6 +2,7 @@ export * from "./chain.js";
 export * from "./crypto.js";
 export * from "./deployments.js";
 export * from "./domain.js";
+export * from "./metrics.js";
 export * from "./proof.js";
 export * from "./review.js";
 export * from "./types.js";

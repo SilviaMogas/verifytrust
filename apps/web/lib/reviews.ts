@@ -16,6 +16,10 @@ export type PublishedReview = {
   txHash?: string;
   network?: string;
   publishedAt: string;
+  salt?: string;
+  publicInputs?: [string, string, string, string, string];
+  blockNumber?: number;
+  verifiedAt?: number;
 };
 
 export async function listReviews(filter?: {
@@ -47,10 +51,27 @@ export async function reviewStats(productSlug: string) {
 
 export async function marketplaceMetrics() {
   const reviews = await listReviews();
-  return {
-    merchants: merchants.length,
-    products: products.length,
-    verifiedReviews: reviews.length,
-    preventedDuplicates: await countDuplicateAttempts(),
-  };
+  try {
+    const { getOnChainMetrics } = await import("@verifytrust/sdk");
+    const chain = await getOnChainMetrics({
+      rpcUrl:
+        process.env.RPC_URL ?? "https://ethereum-sepolia-rpc.publicnode.com",
+      chainId: Number(process.env.CHAIN_ID || 11155111),
+    });
+    return {
+      merchants: merchants.length,
+      products: products.length,
+      verifiedReviews: chain.totalVerifications,
+      preventedDuplicates: await countDuplicateAttempts(),
+      metricsSource: "sepolia-events",
+    };
+  } catch {
+    return {
+      merchants: merchants.length,
+      products: products.length,
+      verifiedReviews: reviews.length,
+      preventedDuplicates: await countDuplicateAttempts(),
+      metricsSource: "offchain-fallback",
+    };
+  }
 }

@@ -17,10 +17,14 @@ export default function MarketplaceBrowser({
   products,
   merchants,
   stats,
+  verifiedReviews,
+  metricsSource,
 }: {
   products: Product[];
   merchants: Merchant[];
   stats: Record<string, ProductStats>;
+  verifiedReviews: number;
+  metricsSource: string;
 }) {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("Any");
@@ -81,6 +85,7 @@ export default function MarketplaceBrowser({
   };
 
   return <div>
+    <div className="metrics"><div className="metric"><strong>{verifiedReviews}</strong><span>verified reviews · {metricsSource}</span></div></div>
     <div className="controls">
       <label>Search products or merchants<input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search Longhand..." /></label>
       <label>Category<select value={category} onChange={(event) => setCategory(event.target.value)}><option>Any</option><option>Experiences</option></select></label>

@@ -5,3 +5,8 @@ export const deployments = {
   31337: chain31337,
   11155111: chain11155111,
 } as const;
+
+export const deploymentBlocks = {
+  31337: 0,
+  11155111: 11675562,
+} as const;
