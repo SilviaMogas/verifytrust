@@ -1,0 +1,12 @@
+{
+  "name": "verifytrust",
+  "private": true,
+  "packageManager": "pnpm@12.3.4",
+  "scripts": {
+    "build": "echo 'Build not implemented'",
+    "dev": "echo 'Development server not implemented'",
+    "lint": "echo 'Lint not implemented'",
+    "test": "echo 'Tests not implemented'",
+    "typecheck": "echo 'Type checking not implemented'"
+  }
+}
