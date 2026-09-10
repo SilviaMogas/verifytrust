@@ -101,6 +101,7 @@ Import the repository in Vercel with **Root Directory = `apps/web`**. The
 | `RELAYER_PRIVATE_KEY` | funded Sepolia testnet key that pays gas for `submitVerifiedReview` (~3.7M gas per demo) |
 | `DEMO_ISSUER_PRIVATE_KEY` | the demo issuer key approved in `IssuerRegistry` (see `packages/contracts/deployments/11155111.json`) |
 | `STRIPE_SECRET_KEY` | Stripe test-mode secret used by the server-side checkout route |
+| `STRIPE_WEBHOOK_SECRET` | Stripe signing secret for `checkout.session.completed` webhook events |
 | `NEXT_PUBLIC_APP_URL` | public origin used for Stripe success and cancellation URLs |
 | `KV_REST_API_URL` | optional Upstash Redis REST URL for published reviews |
 | `KV_REST_API_TOKEN` | optional Upstash Redis REST token |
@@ -116,6 +117,9 @@ API rate limiting uses an in-memory per-instance token bucket by default.
 When the Upstash variables are configured, it uses Upstash-backed counters;
 production deployments should use that shared limiter path rather than relying
 on per-instance memory.
+
+Configure Stripe Dashboard → Webhooks with endpoint
+`<APP_URL>/api/stripe/webhook` and event `checkout.session.completed`.
 
 ## License
 

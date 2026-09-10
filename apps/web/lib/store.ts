@@ -6,6 +6,12 @@ import type { PublishedReview } from "./reviews";
 type StoreFile = {
   reviews: PublishedReview[];
   duplicateNullifiers: string[];
+  paidSessions: Record<string, PaidSession>;
+};
+
+export type PaidSession = {
+  sessionId: string;
+  paidAt: string;
 };
 
 const storeFile =
@@ -15,6 +21,10 @@ const kvUrl = process.env.KV_REST_API_URL?.replace(/\/$/, "");
 const kvToken = process.env.KV_REST_API_TOKEN;
 
 const useKv = Boolean(kvUrl && kvToken);
+
+export function storeBackend(): "upstash" | "file" {
+  return useKv ? "upstash" : "file";
+}
 
 async function kvCommand<T>(command: string[]): Promise<T> {
   if (!kvUrl || !kvToken) throw new Error("review store is not configured");
@@ -42,10 +52,14 @@ async function readFileStore(): Promise<StoreFile> {
       duplicateNullifiers: Array.isArray(value.duplicateNullifiers)
         ? value.duplicateNullifiers
         : [],
+      paidSessions:
+        value.paidSessions && typeof value.paidSessions === "object"
+          ? value.paidSessions
+          : {},
     };
   } catch (error) {
     if (error instanceof Error && "code" in error && error.code === "ENOENT") {
-      return { reviews: [], duplicateNullifiers: [] };
+      return { reviews: [], duplicateNullifiers: [], paidSessions: {} };
     }
     throw error;
   }
@@ -108,6 +122,33 @@ export async function recordDuplicateAttempt(nullifier: string) {
     store.duplicateNullifiers.push(nullifier);
     await writeFileStore(store);
   }
+}
+
+export async function recordPaidSession(paidSession: PaidSession) {
+  if (useKv) {
+    await kvCommand([
+      "SET",
+      `vt:paid-session:${paidSession.sessionId}`,
+      JSON.stringify(paidSession),
+    ]);
+    return;
+  }
+  const store = await readFileStore();
+  store.paidSessions[paidSession.sessionId] = paidSession;
+  await writeFileStore(store);
+}
+
+export async function getPaidSession(
+  sessionId: string,
+): Promise<PaidSession | undefined> {
+  if (useKv) {
+    const value = await kvCommand<string | null>([
+      "GET",
+      `vt:paid-session:${sessionId}`,
+    ]);
+    return value ? (JSON.parse(value) as PaidSession) : undefined;
+  }
+  return (await readFileStore()).paidSessions[sessionId];
 }
 
 export async function countDuplicateAttempts(): Promise<number> {

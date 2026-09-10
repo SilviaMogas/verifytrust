@@ -5,6 +5,7 @@ import {
   updateSessionMetadata,
 } from "../../../../lib/stripe";
 import { rateLimit } from "../../../../lib/ratelimit";
+import { getPaidSession } from "../../../../lib/store";
 
 const DEV_ISSUER_KEY = `0x${"42".padStart(64, "0")}` as `0x${string}`;
 const bytes32Pattern = /^0x[0-9a-fA-F]{64}$/;
@@ -55,7 +56,17 @@ export async function POST(request: Request) {
       400,
     );
   }
-  const paid = session.payment_status === "paid";
+  let webhookConfirmed = false;
+  try {
+    webhookConfirmed = Boolean(await getPaidSession(body.sessionId));
+  } catch {
+    webhookConfirmed = false;
+  }
+  const paymentEvidence = {
+    stripe: session.payment_status === "paid",
+    webhook: webhookConfirmed,
+  };
+  const paid = paymentEvidence.stripe;
   if (!paid) {
     return customerError(
       "payment_not_confirmed",

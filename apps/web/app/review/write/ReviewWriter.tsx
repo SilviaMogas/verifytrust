@@ -112,14 +112,20 @@ export default function ReviewWriter({ sessionId }: { sessionId: string }) {
           publicIdentity,
         }),
       });
-      const result = (await response.json()) as { id?: string; code?: string };
-      if (!response.ok || !result.id) {
+      const result = (await response.json()) as {
+        id?: string | null;
+        verifyUrl?: string;
+        code?: string;
+      };
+      if (!response.ok || (!result.id && !result.verifyUrl)) {
         throw new Error(
           errorCopy[result.code ?? "review_publication_failed"] ??
             "Review publication failed. Please try again.",
         );
       }
-      router.push(`/review/${result.id}?just=1`);
+      router.push(
+        result.verifyUrl ?? `/review/${result.id as string}?just=1`,
+      );
     } catch (caught) {
       setStage("verified");
       setError(

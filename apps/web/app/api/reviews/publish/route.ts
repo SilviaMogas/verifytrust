@@ -163,11 +163,13 @@ export async function POST(request: Request) {
       verifiedAt: result.verifiedAt,
     });
   } catch {
-    return errorResponse(
-      "review_publication_failed",
-      "Your review was verified, but could not be published yet.",
-      500,
-    );
+    return NextResponse.json({
+      id: null,
+      nullifier: publicInputs[3],
+      txHash: result.hash,
+      verifyUrl: `/verify/nullifier/${publicInputs[3]}`,
+      storage: "unavailable",
+    });
   }
   return NextResponse.json({ id });
 }
