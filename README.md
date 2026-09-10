@@ -2,6 +2,88 @@
 
 **PROVE THE PURCHASE. PROTECT THE PERSON.**
 
-Verify Trust is a privacy-preserving Proof of Review protocol that lets a customer prove an eligible purchase without revealing their identity, receipt, order ID, payment information, or purchase history.
+Verify Trust is a privacy-preserving Proof of Review protocol. A merchant or issuer
+signs a purchase credential; a customer proves locally that the credential is valid
+for an approved merchant and product; Ethereum verifies the proof and enforces a
+deterministic one-time nullifier. The design keeps identity, email, receipt, order
+ID, payment information, and purchase history out of the verification record.
 
-**Status: in development**
+> The internet does not need to know who left a verified review. It only needs proof
+> that the reviewer had the right to leave it.
+
+## Quickstart
+
+Requirements: Node 20, pnpm, Foundry, Noir/nargo, and Barretenberg. Install and run
+the local demo:
+
+```bash
+pnpm install
+pnpm dev:local
+```
+
+Then open `http://127.0.0.1:3000/demo`. The local orchestration starts Anvil,
+deploys the contracts, approves the demo issuer, and starts Next.js.
+
+## Repository structure
+
+```text
+apps/web/                 Next.js app and API routes
+packages/circuits/        Noir circuit, EVM artifacts, and E2E script
+packages/contracts/       Solidity contracts and Foundry tests
+packages/sdk/              @verifytrust/sdk
+packages/merchant-sdk/     @verifytrust/merchant-sdk
+examples/demo-merchant/   NOVA GOODS example issuer
+docs/                      Architecture and security documentation
+scripts/dev-local.sh       Local Anvil/Next orchestration
+```
+
+## Documentation
+
+* [Architecture](docs/ARCHITECTURE.md)
+* [Cryptographic specification](docs/CRYPTOGRAPHIC_SPEC.md)
+* [Privacy architecture](docs/PRIVACY_ARCHITECTURE.md)
+* [Threat model](docs/THREAT_MODEL.md)
+* [Demo script](docs/DEMO_SCRIPT.md)
+* [Project history](docs/PROJECT_HISTORY.md) — maintained separately
+* [Octant application](docs/OCTANT_APPLICATION.md) — maintained separately
+* [Octant readiness](docs/OCTANT_READINESS.md) — maintained separately
+
+## Tests and builds
+
+```bash
+pnpm -r build
+pnpm -r test
+pnpm --filter web lint
+pnpm --filter web build
+pnpm e2e
+```
+
+For the contract package:
+
+```bash
+cd packages/contracts
+forge test -vv
+forge build --sizes
+```
+
+For the circuit:
+
+```bash
+cd packages/circuits
+nargo test
+pnpm build
+```
+
+## License
+
+Apache-2.0. See [LICENSE](LICENSE).
+
+## Status / integrity
+
+This is **testnet-only** software. It has **not received an external security
+audit** and includes a **demo merchant only**. The current v1 demo issuer sees the
+customer secret; blind issuance, eligibility windows, and other production
+hardening are future work. Do not use this implementation for production identity,
+payment, or review decisions without independent security and operational review.
+
+Source: [github.com/SilviaMogas/verifytrust](https://github.com/SilviaMogas/verifytrust).
