@@ -9,7 +9,7 @@ test("completes the proof of review demo", async ({ page }) => {
   await page.screenshot({ path: `${shots}/step-2.png`, fullPage: true });
   await page.getByRole("button", { name: "CONTINUE" }).click();
   await page.getByRole("button", { name: "GENERATE PRIVATE PROOF" }).click();
-  await expect(page.getByText("WRITE REVIEW")).toBeVisible({ timeout: 120000 });
+  await expect(page.getByRole("button", { name: "WRITE REVIEW" })).toBeVisible({ timeout: 120000 });
   await page.screenshot({ path: `${shots}/step-3.png`, fullPage: true });
   await page.getByRole("button", { name: "WRITE REVIEW" }).click();
   await page.getByRole("button", { name: "COMPUTE REVIEW COMMITMENT" }).click();
