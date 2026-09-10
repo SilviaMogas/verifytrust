@@ -2,57 +2,32 @@ import { execFileSync, spawn } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import {
-  Barretenberg,
-  BarretenbergSync,
-  UltraHonkBackend,
-} from "@aztec/bb.js";
-import { Noir as NoirProgram } from "@noir-lang/noir_js";
-import {
   createPublicClient,
   createWalletClient,
   http,
-  keccak256,
-  parseAbi,
-  toBytes,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { foundry } from "viem/chains";
+import {
+  computeIssuerKeyHash,
+  computeNullifier,
+  fieldFromString,
+  generateProof,
+  issueCredential,
+  verifyProof,
+  verifyTrustRegistryAbi as registryAbi,
+  type Credential as SdkCredential,
+} from "@verifytrust/sdk";
 
-const FIELD_MODULUS =
-  0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001n;
 const ANVIL_PRIVATE_KEY =
   "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
 const root = resolve(import.meta.dirname, "..");
 const contracts = resolve(root, "../contracts");
-const artifact = JSON.parse(
-  readFileSync(resolve(root, "target/proof_of_review.json"), "utf8"),
-);
-
 const fieldBytes = (value: bigint) =>
-  `0x${value.toString(16).padStart(64, "0")}`;
-const field = (value: bigint) => value % FIELD_MODULUS;
-const fieldFromText = (value: string) =>
-  field(BigInt(keccak256(toBytes(value))));
-const asBytes = (value: bigint) =>
-  Uint8Array.from(Buffer.from(fieldBytes(value).slice(2), "hex"));
-const asBigInt = (value: Uint8Array) =>
-  BigInt(`0x${Buffer.from(value).toString("hex")}`);
-
-const registryAbi = parseAbi([
-  "function submitVerifiedReview(bytes proof, bytes32[] publicInputs, bytes32 reviewCommitment) returns (bytes32)",
-  "function isNullifierUsed(bytes32) view returns (bool)",
-  "function verificationCount() view returns (uint256)",
-  "error NullifierAlreadyUsed(bytes32)",
-]);
+  `0x${value.toString(16).padStart(64, "0")}` as `0x${string}`;
 
 type Credential = {
-  merchantId: bigint;
-  productId: bigint;
-  timestamp: bigint;
-  nonce: bigint;
-  customerSecret: bigint;
-  issuerKeyHash: bigint;
-  nullifier: bigint;
+  credential: SdkCredential;
   proof: `0x${string}`;
   publicInputs: `0x${string}`[];
   reviewCommitment: `0x${string}`;
@@ -62,73 +37,28 @@ type Credential = {
 };
 
 async function makeCredential(
-  api: BarretenbergSync,
-  noir: NoirProgram,
-  backend: UltraHonkBackend,
-  issuerPrivateKey: Uint8Array,
-  issuerPublicKey: { x: Uint8Array; y: Uint8Array },
+  issuerPrivateKey: `0x${string}`,
   index: number,
 ): Promise<Credential> {
-  const merchantId = fieldFromText("nova-goods");
-  const productId = fieldFromText(index === 0 ? "nova-travel-bottle" : "nova-pack");
-  const timestamp = BigInt(1_700_000_000 + index);
-  const nonce = BigInt(7000 + index);
-  const customerSecret = BigInt(9000 + index);
-  const commitment = api.poseidon2Hash({
-    inputs: [
-      asBytes(1n),
-      asBytes(merchantId),
-      asBytes(productId),
-      asBytes(timestamp),
-      asBytes(nonce),
-      asBytes(customerSecret),
-    ],
-  }).hash;
-  const signature = await api.schnorrConstructSignature({
-    messageField: commitment,
-    privateKey: issuerPrivateKey,
+  const credential = await issueCredential({
+    merchantId: fieldFromString("nova-goods"),
+    productId: fieldFromString(index === 0 ? "nova-travel-bottle" : "nova-pack"),
+    purchaseTimestamp: BigInt(1_700_000_000 + index),
+    issuerPrivateKey,
+    customerSecret: fieldBytes(BigInt(9000 + index)),
   });
-  const signatureBytes = new Uint8Array([...signature.s, ...signature.e]);
-  const issuerKeyHash = asBigInt(
-    api.poseidon2Hash({
-      inputs: [asBytes(3n), issuerPublicKey.x, issuerPublicKey.y],
-    }).hash,
-  );
-  const nullifier = asBigInt(
-    api.poseidon2Hash({
-      inputs: [asBytes(2n), asBytes(customerSecret), asBytes(nonce), asBytes(productId)],
-    }).hash,
-  );
-  const input = {
-    merchant_id: fieldBytes(merchantId),
-    product_id: fieldBytes(productId),
-    purchase_timestamp: fieldBytes(timestamp),
-    purchase_nonce: fieldBytes(nonce),
-    customer_secret: fieldBytes(customerSecret),
-    issuer_pk_x: fieldBytes(asBigInt(issuerPublicKey.x)),
-    issuer_pk_y: fieldBytes(asBigInt(issuerPublicKey.y)),
-    signature: Array.from(signatureBytes),
-    pub_merchant_id: fieldBytes(merchantId),
-    pub_product_id: fieldBytes(productId),
-    pub_issuer_key_hash: fieldBytes(issuerKeyHash),
-    pub_nullifier: fieldBytes(nullifier),
-    pub_protocol_version: fieldBytes(1n),
-  };
-  const { witness } = await noir.execute(input);
   const started = Date.now();
-  const proofData = await backend.generateProof(witness, {
-    verifierTarget: "evm",
-  });
+  const proofData = await generateProof(credential);
   const provingMs = Date.now() - started;
   console.log(`credential ${index + 1} proving time: ${provingMs} ms`);
-  if (!(await backend.verifyProof(proofData, { verifierTarget: "evm" }))) {
+  if (!(await verifyProof(proofData))) {
     throw new Error("bb.js proof verification failed");
   }
   const expectedInputs = [
-    fieldBytes(merchantId),
-    fieldBytes(productId),
-    fieldBytes(issuerKeyHash),
-    fieldBytes(nullifier),
+    credential.merchantId,
+    credential.productId,
+    await computeIssuerKeyHash(credential.issuerPublicKey),
+    await computeNullifier(credential),
     fieldBytes(1n),
   ];
   if (proofData.publicInputs.join().toLowerCase() !== expectedInputs.join().toLowerCase()) {
@@ -136,16 +66,10 @@ async function makeCredential(
   }
   console.log(`credential ${index + 1} Poseidon2 JS/Noir parity: confirmed`);
   return {
-    merchantId,
-    productId,
-    timestamp,
-    nonce,
-    customerSecret,
-    issuerKeyHash,
-    nullifier,
-    proof: `0x${Buffer.from(proofData.proof).toString("hex")}`,
+    credential,
+    proof: proofData.proof,
     publicInputs: proofData.publicInputs as `0x${string}`[],
-    reviewCommitment: fieldBytes(field(10_000n + BigInt(index))),
+    reviewCommitment: fieldBytes(10_000n + BigInt(index)),
     email: `reviewer-${index + 1}@example.test`,
     orderId: `order-${index + 1}`,
     receipt: `receipt-${index + 1}`,
@@ -174,17 +98,10 @@ async function waitForAnvil(url: string) {
 }
 
 async function main() {
-  const api = await BarretenbergSync.initSingleton();
-  const issuerPrivateKey = asBytes(66n);
-  const issuer = api.schnorrComputePublicKey({ privateKey: issuerPrivateKey });
-  const noir = new NoirProgram(artifact);
-  const backend = new UltraHonkBackend(
-    artifact.bytecode,
-    await Barretenberg.initSingleton(),
-  );
+  const issuerPrivateKey = fieldBytes(66n);
   const credentials = [
-    await makeCredential(api, noir, backend, issuerPrivateKey, issuer.publicKey, 0),
-    await makeCredential(api, noir, backend, issuerPrivateKey, issuer.publicKey, 1),
+    await makeCredential(issuerPrivateKey, 0),
+    await makeCredential(issuerPrivateKey, 1),
   ];
 
   const anvil = spawn("anvil", ["--silent"], { stdio: "ignore" });
@@ -206,8 +123,10 @@ async function main() {
         cwd: contracts,
         env: {
           ...process.env,
-          DEMO_MERCHANT_ID: fieldBytes(credentials[0].merchantId),
-          DEMO_ISSUER_KEY_HASH: fieldBytes(credentials[0].issuerKeyHash),
+          DEMO_MERCHANT_ID: credentials[0].credential.merchantId,
+          DEMO_ISSUER_KEY_HASH: await computeIssuerKeyHash(
+            credentials[0].credential.issuerPublicKey,
+          ),
         },
         stdio: "inherit",
       },
@@ -226,6 +145,7 @@ async function main() {
       transport: http(rpcUrl),
     });
     const submissionHash = await walletClient.writeContract({
+      account,
       address: deployment.verifyTrustRegistry,
       abi: registryAbi,
       functionName: "submitVerifiedReview",
@@ -234,6 +154,7 @@ async function main() {
         credentials[0].publicInputs,
         credentials[0].reviewCommitment,
       ],
+      chain: foundry,
     });
     await publicClient.waitForTransactionReceipt({ hash: submissionHash });
     if (
@@ -266,6 +187,7 @@ async function main() {
       console.log("replay rejected with NullifierAlreadyUsed");
     }
     const secondSubmissionHash = await walletClient.writeContract({
+      account,
       address: deployment.verifyTrustRegistry,
       abi: registryAbi,
       functionName: "submitVerifiedReview",
@@ -274,6 +196,7 @@ async function main() {
         credentials[1].publicInputs,
         credentials[1].reviewCommitment,
       ],
+      chain: foundry,
     });
     await publicClient.waitForTransactionReceipt({ hash: secondSubmissionHash });
     if (
@@ -306,8 +229,6 @@ async function main() {
     });
   } finally {
     anvil.kill();
-    await Barretenberg.destroySingleton();
-    BarretenbergSync.destroySingleton();
   }
 }
 

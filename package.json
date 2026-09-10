@@ -3,11 +3,12 @@
   "private": true,
   "packageManager": "pnpm@12.3.4",
   "scripts": {
-    "build": "echo 'Build not implemented'",
-    "dev": "echo 'Development server not implemented'",
+    "build": "pnpm --filter @verifytrust/sdk build && pnpm --filter @verifytrust/merchant-sdk build && pnpm --filter web build",
+    "dev": "pnpm --filter web dev",
+    "dev:local": "bash scripts/dev-local.sh",
     "e2e": "pnpm --filter @verifytrust/circuits e2e",
     "lint": "echo 'Lint not implemented'",
-    "test": "echo 'Tests not implemented'",
+    "test": "cd packages/contracts && /home/ubuntu/.foundry/bin/forge test -vv",
     "typecheck": "echo 'Type checking not implemented'"
   }
 }
