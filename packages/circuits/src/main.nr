@@ -1,0 +1,113 @@
+mod domain;
+
+use domain::{DOMAIN_CREDENTIAL, DOMAIN_ISSUER, DOMAIN_NULLIFIER, PROTOCOL_VERSION};
+use schnorr::verify_signature;
+use std::embedded_curve_ops::{EmbeddedCurvePoint, EmbeddedCurveScalar};
+use poseidon::poseidon2::Poseidon2;
+
+fn scalar_from_bytes(bytes: [u8; 64], offset: u32) -> EmbeddedCurveScalar {
+    let mut lo: Field = 0;
+    let mut hi: Field = 0;
+    let mut multiplier: Field = 1;
+    for i in 0..16 {
+        lo += (bytes[offset + 31 - i] as Field) * multiplier;
+        hi += (bytes[offset + 15 - i] as Field) * multiplier;
+        multiplier *= 256;
+    }
+    EmbeddedCurveScalar::new(lo, hi)
+}
+
+fn main(
+    merchant_id: Field,
+    product_id: Field,
+    purchase_timestamp: Field,
+    purchase_nonce: Field,
+    customer_secret: Field,
+    issuer_pk_x: Field,
+    issuer_pk_y: Field,
+    signature: [u8; 64],
+    pub_merchant_id: pub Field,
+    pub_product_id: pub Field,
+    pub_issuer_key_hash: pub Field,
+    pub_nullifier: pub Field,
+    pub_protocol_version: pub Field,
+) {
+    let credential_commitment = Poseidon2::hash(
+        [
+            DOMAIN_CREDENTIAL,
+            merchant_id,
+            product_id,
+            purchase_timestamp,
+            purchase_nonce,
+            customer_secret,
+        ],
+        6,
+    );
+    let issuer_key_hash = Poseidon2::hash([DOMAIN_ISSUER, issuer_pk_x, issuer_pk_y], 3);
+    let nullifier = Poseidon2::hash(
+        [DOMAIN_NULLIFIER, customer_secret, purchase_nonce, product_id],
+        4,
+    );
+
+    assert(merchant_id == pub_merchant_id);
+    assert(product_id == pub_product_id);
+    assert(issuer_key_hash == pub_issuer_key_hash);
+    assert(nullifier == pub_nullifier);
+    assert(pub_protocol_version == PROTOCOL_VERSION);
+    assert(purchase_nonce != 0);
+    assert(customer_secret != 0);
+
+    let public_key = EmbeddedCurvePoint::new(issuer_pk_x, issuer_pk_y);
+    let sig_s = scalar_from_bytes(signature, 0);
+    let sig_e = scalar_from_bytes(signature, 32);
+    assert(verify_signature(public_key, (sig_s, sig_e), credential_commitment));
+}
+
+#[test]
+fn valid_credential() {
+    main(
+        11,
+        22,
+        33,
+        44,
+        55,
+        0x2d77163ddebda983bf5266bf8bef29aac6a7393ad10ad8b563104520dd4efef3,
+        0x11e36587169a6552b3fce67fabc2f45c1e9481f590fdc04565a4a060cc18c667,
+        [
+            0x16, 0xf3, 0x5b, 0x82, 0x7a, 0xaf, 0x74, 0x75, 0x43, 0x78, 0x45, 0x62, 0xb8, 0x9d, 0x22, 0xe6,
+            0x54, 0xd6, 0x19, 0xf8, 0xfa, 0x89, 0x9b, 0xb0, 0xc8, 0x74, 0xa5, 0xd1, 0x7b, 0x2a, 0x90, 0xdd,
+            0x10, 0xb1, 0x2f, 0x9f, 0x78, 0x07, 0x6a, 0xa1, 0x47, 0xf9, 0xf2, 0xfc, 0xd7, 0x5f, 0x04, 0x61,
+            0x99, 0xd4, 0x5c, 0x5d, 0x96, 0x17, 0xf1, 0x92, 0x63, 0x9c, 0xee, 0xa5, 0xd4, 0x6b, 0x94, 0xda,
+        ],
+        11,
+        22,
+        0x23d61f92a331e4bb8a3b66276d35faa307aab35088de5ebe3db66fe20a93c7d5,
+        0x2ba61bf5921cc0778266a61fae59df0d767602e9c5ff2588bde14c2471b0e4d9,
+        1,
+    );
+}
+
+#[test(should_fail)]
+fn wrong_product() {
+    main(11, 22, 33, 44, 55, 0x2d77163ddebda983bf5266bf8bef29aac6a7393ad10ad8b563104520dd4efef3, 0x11e36587169a6552b3fce67fabc2f45c1e9481f590fdc04565a4a060cc18c667, [0; 64], 11, 99, 0, 0, 1);
+}
+
+#[test(should_fail)]
+fn wrong_customer_secret() {
+    main(11, 22, 33, 44, 56, 0x2d77163ddebda983bf5266bf8bef29aac6a7393ad10ad8b563104520dd4efef3, 0x11e36587169a6552b3fce67fabc2f45c1e9481f590fdc04565a4a060cc18c667, [0; 64], 11, 22, 0, 0, 1);
+}
+
+#[test(should_fail)]
+fn tampered_field() {
+    main(11, 22, 34, 44, 55, 0x2d77163ddebda983bf5266bf8bef29aac6a7393ad10ad8b563104520dd4efef3, 0x11e36587169a6552b3fce67fabc2f45c1e9481f590fdc04565a4a060cc18c667, [0; 64], 11, 22, 0, 0, 1);
+}
+
+#[test(should_fail)]
+fn wrong_issuer_key_hash() {
+    main(11, 22, 33, 44, 55, 0x2d77163ddebda983bf5266bf8bef29aac6a7393ad10ad8b563104520dd4efef3, 0x11e36587169a6552b3fce67fabc2f45c1e9481f590fdc04565a4a060cc18c667, [0; 64], 11, 22, 1, 0, 1);
+}
+
+#[test(should_fail)]
+fn wrong_protocol_version() {
+    main(11, 22, 33, 44, 55, 0x2d77163ddebda983bf5266bf8bef29aac6a7393ad10ad8b563104520dd4efef3, 0x11e36587169a6552b3fce67fabc2f45c1e9481f590fdc04565a4a060cc18c667, [0; 64], 11, 22, 0, 0, 2);
+}

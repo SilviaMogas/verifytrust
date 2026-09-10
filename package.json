@@ -5,6 +5,7 @@
   "scripts": {
     "build": "echo 'Build not implemented'",
     "dev": "echo 'Development server not implemented'",
+    "e2e": "pnpm --filter @verifytrust/circuits e2e",
     "lint": "echo 'Lint not implemented'",
     "test": "echo 'Tests not implemented'",
     "typecheck": "echo 'Type checking not implemented'"
