@@ -1,8 +1,12 @@
 node_modules/
 .pnpm-store/
+packages/sdk/dist/
+packages/merchant-sdk/dist/
+apps/web/test-results/
 
 out/
 cache/
+broadcast/
 
 target/
 

@@ -1,0 +1,15 @@
+{
+  "name": "verifytrust",
+  "private": true,
+  "packageManager": "pnpm@12.3.4",
+  "scripts": {
+    "build": "pnpm --filter @verifytrust/sdk build && pnpm --filter @verifytrust/merchant-sdk build && pnpm --filter web build",
+    "dev": "pnpm --filter web dev",
+    "dev:local": "bash scripts/dev-local.sh",
+    "e2e": "pnpm --filter @verifytrust/circuits e2e",
+    "deploy:sepolia": "bash scripts/deploy-sepolia.sh",
+    "lint": "pnpm --filter web lint",
+    "test": "pnpm -r test && (cd packages/contracts && forge test -vv) && (cd packages/circuits && nargo test)",
+    "typecheck": "pnpm -r typecheck"
+  }
+}

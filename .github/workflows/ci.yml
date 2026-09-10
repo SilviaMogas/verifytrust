@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  web-and-sdk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @verifytrust/sdk build && pnpm --filter @verifytrust/merchant-sdk build
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm -r --filter '!@verifytrust/circuits' test
+      - run: pnpm --filter web build
+
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.8.1
+      - run: forge test -vv
+        working-directory: packages/contracts
+
+  circuits:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: noir-lang/noirup@v0.1.4
+        with:
+          toolchain: 1.0.0-beta.26
+      - run: nargo test
+        working-directory: packages/circuits
