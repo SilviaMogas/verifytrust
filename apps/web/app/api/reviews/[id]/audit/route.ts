@@ -88,11 +88,7 @@ export async function GET(
     );
   }
 
-  if (
-    !publicInputs ||
-    blockNumber === undefined ||
-    verifiedAt === undefined
-  ) {
+  if (!publicInputs || blockNumber === undefined) {
     return NextResponse.json(
       { code: "audit_unavailable", message: "Audit data is not available." },
       { status: 503 },
