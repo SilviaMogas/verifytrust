@@ -100,10 +100,18 @@ Import the repository in Vercel with **Root Directory = `apps/web`**. The
 | `NEXT_PUBLIC_EXPLORER_URL` | `https://sepolia.etherscan.io` |
 | `RELAYER_PRIVATE_KEY` | funded Sepolia testnet key that pays gas for `submitVerifiedReview` (~3.7M gas per demo) |
 | `DEMO_ISSUER_PRIVATE_KEY` | the demo issuer key approved in `IssuerRegistry` (see `packages/contracts/deployments/11155111.json`) |
+| `STRIPE_SECRET_KEY` | Stripe test-mode secret used by the server-side checkout route |
+| `NEXT_PUBLIC_APP_URL` | public origin used for Stripe success and cancellation URLs |
+| `KV_REST_API_URL` | optional Upstash Redis REST URL for published reviews |
+| `KV_REST_API_TOKEN` | optional Upstash Redis REST token |
+| `REVIEW_STORE_FILE` | optional JSON review-store path when Upstash is not configured |
 
 Without `RPC_URL`/`RELAYER_PRIVATE_KEY` the demo runs steps 1–4 locally and
 reports an explicit `ETHEREUM NOT CONFIGURED` state instead of faking
 verification. Use testnet-only keys; never reuse a mainnet wallet.
+
+The marketplace checkout and review flow use Stripe test mode. When the
+Upstash variables are absent, review publication uses the local JSON store.
 
 ## License
 

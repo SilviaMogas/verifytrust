@@ -20,6 +20,11 @@ contract Deploy is Script {
         if (bytes(demoMerchant).length != 0 && bytes(demoIssuer).length != 0) {
             issuerRegistry.approveIssuer(vm.parseBytes32(demoMerchant), vm.parseBytes32(demoIssuer));
         }
+        string memory longhandMerchant = vm.envOr("LONGHAND_MERCHANT_ID", string(""));
+        string memory longhandIssuer = vm.envOr("LONGHAND_ISSUER_KEY_HASH", string(""));
+        if (bytes(longhandMerchant).length != 0 && bytes(longhandIssuer).length != 0) {
+            issuerRegistry.approveIssuer(vm.parseBytes32(longhandMerchant), vm.parseBytes32(longhandIssuer));
+        }
         vm.stopBroadcast();
 
         string memory key =
