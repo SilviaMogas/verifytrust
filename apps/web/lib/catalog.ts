@@ -61,7 +61,7 @@ export const products: Product[] = [
     ],
     cta: "Pay $1 and review",
     live: true,
-    listedAt: "2026-01-01T00:00:00.000Z",
+    listedAt: "2026-09-10T00:00:00.000Z",
   },
   {
     slug: "one-postcard",
