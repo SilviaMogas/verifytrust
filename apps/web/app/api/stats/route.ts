@@ -6,20 +6,12 @@ import { countDuplicateAttempts, listReviews } from "../../../lib/store";
 export const revalidate = 60;
 
 export async function GET() {
-  let reviews: Awaited<ReturnType<typeof listReviews>> = [];
-  let offchain: {
-    publishedReviews: number;
-    preventedDuplicates: number;
-  } | null = null;
-  try {
-    reviews = await listReviews();
-    offchain = {
-      publishedReviews: reviews.length,
-      preventedDuplicates: await countDuplicateAttempts(),
-    };
-  } catch {
-    offchain = null;
-  }
+  const reviews = await listReviews().catch(() => null);
+  const preventedDuplicates = await countDuplicateAttempts().catch(() => null);
+  const offchain =
+    reviews && preventedDuplicates !== null
+      ? { publishedReviews: reviews.length, preventedDuplicates }
+      : null;
   try {
     const chain = await getOnChainMetrics({
       rpcUrl:
@@ -37,9 +29,9 @@ export async function GET() {
   } catch {
     return NextResponse.json({
       chain: {
-        totalVerifications: offchain?.publishedReviews ?? 0,
-        registryTotalVerifications: offchain?.publishedReviews ?? 0,
-        merchants: new Set(reviews.map((review) => review.merchantSlug)).size,
+        totalVerifications: reviews?.length ?? 0,
+        registryTotalVerifications: reviews?.length ?? 0,
+        merchants: new Set((reviews ?? []).map((review) => review.merchantSlug)).size,
         lastVerifiedAt: null,
         registryAddress:
           deployments[Number(process.env.CHAIN_ID || 11155111) as keyof typeof deployments]
