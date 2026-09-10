@@ -9,7 +9,9 @@ const maxRequests = 10;
 
 function clientIp(request: Request) {
   return (
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    request.headers.get("x-vercel-forwarded-for")?.trim() ||
+    // The last forwarded address is the one appended by the trusted proxy.
+    request.headers.get("x-forwarded-for")?.split(",").at(-1)?.trim() ||
     request.headers.get("x-real-ip") ||
     "unknown"
   );
@@ -26,22 +28,31 @@ async function upstashLimit(key: string) {
         Authorization: `Bearer ${token}`,
         "content-type": "application/json",
       },
-      body: JSON.stringify([
-        ["INCR", key],
-        ["EXPIRE", key, windowSeconds],
-      ]),
+      body: JSON.stringify([["INCR", key]]),
       cache: "no-store",
     });
     if (!response.ok) return undefined;
     const result = (await response.json()) as Array<{ result: number }>;
-    return Number(result[0]?.result) <= maxRequests;
+    const count = Number(result[0]?.result);
+    if (count === 1) {
+      await fetch(`${url}/pipeline`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "content-type": "application/json",
+        },
+        body: JSON.stringify([["EXPIRE", key, 120]]),
+        cache: "no-store",
+      });
+    }
+    return count <= maxRequests;
   } catch {
     return undefined;
   }
 }
 
 export async function rateLimit(request: Request, route: string) {
-  const key = `vt:ratelimit:${route}:${clientIp(request)}`;
+  const key = `${route}:${clientIp(request)}:${Math.floor(Date.now() / 60000)}`;
   const remoteResult = await upstashLimit(key);
   if (remoteResult !== undefined) return remoteResult;
 

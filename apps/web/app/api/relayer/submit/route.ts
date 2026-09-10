@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { submitToRelayer } from "../../../../lib/relayer";
 import { rateLimit } from "../../../../lib/ratelimit";
+import { BodyLimitError, readBodyLimited } from "../../../../lib/body";
 const maxBodyBytes = 64 * 1024;
 const bytes32Pattern = /^0x[0-9a-fA-F]{64}$/;
 const proofPattern = /^0x[0-9a-fA-F]+$/;
@@ -15,12 +16,11 @@ export async function POST(request: Request) {
       { status: 429 },
     );
   }
-  const contentLength = Number(request.headers.get("content-length"));
-  if (Number.isFinite(contentLength) && contentLength > maxBodyBytes) {
-    return invalidPayload();
-  }
-  const rawBody = await request.text();
-  if (new TextEncoder().encode(rawBody).byteLength > maxBodyBytes) {
+  let rawBody: string;
+  try {
+    rawBody = await readBodyLimited(request, maxBodyBytes);
+  } catch (error) {
+    if (error instanceof BodyLimitError) return invalidPayload();
     return invalidPayload();
   }
   let body: unknown;
