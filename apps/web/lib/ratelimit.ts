@@ -28,23 +28,16 @@ async function upstashLimit(key: string) {
         Authorization: `Bearer ${token}`,
         "content-type": "application/json",
       },
-      body: JSON.stringify([["INCR", key]]),
+      body: JSON.stringify([
+        ["SET", key, 0, "EX", windowSeconds * 2, "NX"],
+        ["INCR", key],
+      ]),
       cache: "no-store",
     });
     if (!response.ok) return undefined;
-    const result = (await response.json()) as Array<{ result: number }>;
-    const count = Number(result[0]?.result);
-    if (count === 1) {
-      await fetch(`${url}/pipeline`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "content-type": "application/json",
-        },
-        body: JSON.stringify([["EXPIRE", key, 120]]),
-        cache: "no-store",
-      });
-    }
+    const result = (await response.json()) as Array<{ result: number | null }>;
+    const count = Number(result[1]?.result);
+    if (!Number.isFinite(count)) return undefined;
     return count <= maxRequests;
   } catch {
     return undefined;
@@ -57,6 +50,9 @@ export async function rateLimit(request: Request, route: string) {
   if (remoteResult !== undefined) return remoteResult;
 
   const now = Date.now();
+  for (const [bucketKey, bucket] of buckets) {
+    if (now - bucket.updatedAt > windowSeconds * 1000) buckets.delete(bucketKey);
+  }
   const existing = buckets.get(key);
   const elapsed = existing ? (now - existing.updatedAt) / 1000 : windowSeconds;
   const tokens = Math.min(

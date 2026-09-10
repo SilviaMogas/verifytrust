@@ -18,7 +18,6 @@ export async function GET() {
       preventedDuplicates: await countDuplicateAttempts(),
     };
   } catch {
-    reviews = [];
     offchain = null;
   }
   try {
