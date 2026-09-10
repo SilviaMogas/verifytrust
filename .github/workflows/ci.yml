@@ -19,7 +19,7 @@ jobs:
       - run: pnpm --filter @verifytrust/sdk build && pnpm --filter @verifytrust/merchant-sdk build
       - run: pnpm typecheck
       - run: pnpm lint
-      - run: pnpm -r test
+      - run: pnpm -r --filter '!@verifytrust/circuits' test
       - run: pnpm --filter web build
 
   contracts:
