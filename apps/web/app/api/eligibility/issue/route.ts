@@ -4,6 +4,7 @@ import {
   retrieveCheckoutSession,
   updateSessionMetadata,
 } from "../../../../lib/stripe";
+import { rateLimit } from "../../../../lib/ratelimit";
 
 const DEV_ISSUER_KEY = `0x${"42".padStart(64, "0")}` as `0x${string}`;
 const bytes32Pattern = /^0x[0-9a-fA-F]{64}$/;
@@ -12,6 +13,13 @@ const customerError = (code: string, message: string, status: number) =>
   NextResponse.json({ code, message }, { status });
 
 export async function POST(request: Request) {
+  if (!(await rateLimit(request, "eligibility/issue"))) {
+    return customerError(
+      "rate_limited",
+      "Too many requests. Please try again shortly.",
+      429,
+    );
+  }
   let body: unknown;
   try {
     body = await request.json();

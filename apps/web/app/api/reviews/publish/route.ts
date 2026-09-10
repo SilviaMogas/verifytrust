@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { createReviewCommitment } from "@verifytrust/sdk";
 import { recordDuplicateAttempt, saveReview } from "../../../../lib/store";
 import { submitToRelayer } from "../../../../lib/relayer";
+import { rateLimit } from "../../../../lib/ratelimit";
 
 const bytes32Pattern = /^0x[0-9a-fA-F]{64}$/;
 const proofPattern = /^0x[0-9a-fA-F]+$/;
@@ -11,6 +12,13 @@ const errorResponse = (code: string, message: string, status: number) =>
   NextResponse.json({ code, message }, { status });
 
 export async function POST(request: Request) {
+  if (!(await rateLimit(request, "reviews/publish"))) {
+    return errorResponse(
+      "rate_limited",
+      "Too many requests. Please try again shortly.",
+      429,
+    );
+  }
   let body: unknown;
   try {
     body = await request.json();
@@ -149,6 +157,10 @@ export async function POST(request: Request) {
       txHash: result.hash,
       network: result.network,
       publishedAt: new Date().toISOString(),
+      salt: value.salt as string,
+      publicInputs,
+      blockNumber: result.blockNumber,
+      verifiedAt: result.verifiedAt,
     });
   } catch {
     return errorResponse(

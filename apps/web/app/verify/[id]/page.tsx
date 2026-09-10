@@ -106,6 +106,9 @@ export default async function VerificationPage({
         <Link className="button secondary" href={`/review/${review.id}`}>
           View public review
         </Link>
+        <a className="button secondary" href={`/api/reviews/${review.id}/audit`}>
+          Download audit JSON
+        </a>
       </section>
       <Footer />
     </main>

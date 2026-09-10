@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { submitToRelayer } from "../../../../lib/relayer";
+import { rateLimit } from "../../../../lib/ratelimit";
 const maxBodyBytes = 64 * 1024;
 const bytes32Pattern = /^0x[0-9a-fA-F]{64}$/;
 const proofPattern = /^0x[0-9a-fA-F]+$/;
@@ -8,6 +9,12 @@ const invalidPayload = () =>
   NextResponse.json({ error: "INVALID PAYLOAD" }, { status: 400 });
 
 export async function POST(request: Request) {
+  if (!(await rateLimit(request, "relayer/submit"))) {
+    return NextResponse.json(
+      { code: "rate_limited", message: "Too many requests. Please try again shortly." },
+      { status: 429 },
+    );
+  }
   const contentLength = Number(request.headers.get("content-length"));
   if (Number.isFinite(contentLength) && contentLength > maxBodyBytes) {
     return invalidPayload();

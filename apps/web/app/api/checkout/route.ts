@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server";
 import { createCheckoutSession, StripeUnavailableError } from "../../../lib/stripe";
+import { rateLimit } from "../../../lib/ratelimit";
 
 export async function POST(request: Request) {
+  if (!(await rateLimit(request, "checkout"))) {
+    return NextResponse.json(
+      { code: "rate_limited", message: "Too many requests. Please try again shortly." },
+      { status: 429 },
+    );
+  }
   let body: unknown;
   try {
     body = await request.json();

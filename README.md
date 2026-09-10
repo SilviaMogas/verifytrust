@@ -112,6 +112,10 @@ verification. Use testnet-only keys; never reuse a mainnet wallet.
 
 The marketplace checkout and review flow use Stripe test mode. When the
 Upstash variables are absent, review publication uses the local JSON store.
+API rate limiting uses an in-memory per-instance token bucket by default.
+When the Upstash variables are configured, it uses Upstash-backed counters;
+production deployments should use that shared limiter path rather than relying
+on per-instance memory.
 
 ## License
 
