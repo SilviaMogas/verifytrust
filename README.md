@@ -87,6 +87,24 @@ nargo test
 pnpm build
 ```
 
+## Deploying the demo (Vercel, Sepolia)
+
+Import the repository in Vercel with **Root Directory = `apps/web`**. The
+`apps/web/vercel.json` build command compiles `@verifytrust/sdk` before
+`next build`. Set these environment variables:
+
+| Variable | Value |
+| --- | --- |
+| `CHAIN_ID` | `11155111` |
+| `RPC_URL` | a Sepolia JSON-RPC endpoint, e.g. `https://ethereum-sepolia-rpc.publicnode.com` |
+| `NEXT_PUBLIC_EXPLORER_URL` | `https://sepolia.etherscan.io` |
+| `RELAYER_PRIVATE_KEY` | funded Sepolia testnet key that pays gas for `submitVerifiedReview` (~3.7M gas per demo) |
+| `DEMO_ISSUER_PRIVATE_KEY` | the demo issuer key approved in `IssuerRegistry` (see `packages/contracts/deployments/11155111.json`) |
+
+Without `RPC_URL`/`RELAYER_PRIVATE_KEY` the demo runs steps 1–4 locally and
+reports an explicit `ETHEREUM NOT CONFIGURED` state instead of faking
+verification. Use testnet-only keys; never reuse a mainnet wallet.
+
 ## License
 
 Apache-2.0. See [LICENSE](LICENSE).
