@@ -3,6 +3,8 @@ import { merchants, products } from "../../lib/catalog";
 import { reviewStats } from "../../lib/reviews";
 import MarketplaceBrowser from "./MarketplaceBrowser";
 
+export const dynamic = "force-dynamic";
+
 export default async function Marketplace() {
   const stats = Object.fromEntries(
     await Promise.all(

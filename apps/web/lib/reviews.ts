@@ -1,4 +1,5 @@
 import { merchants, products } from "./catalog";
+import { countDuplicateAttempts, listReviews as listStoredReviews } from "./store";
 
 export type PublishedReview = {
   id: string;
@@ -9,6 +10,9 @@ export type PublishedReview = {
   body: string;
   publicIdentity: string;
   reviewCommitment: string;
+  nullifier: string;
+  contractAddress: string;
+  chainId: number;
   txHash?: string;
   network?: string;
   publishedAt: string;
@@ -18,9 +22,7 @@ export async function listReviews(filter?: {
   merchantSlug?: string;
   productSlug?: string;
 }): Promise<PublishedReview[]> {
-  // Persistence lands with the review flow.
-  void filter;
-  return [];
+  return listStoredReviews(filter);
 }
 
 export async function reviewStats(productSlug: string) {
@@ -49,6 +51,6 @@ export async function marketplaceMetrics() {
     merchants: merchants.length,
     products: products.length,
     verifiedReviews: reviews.length,
-    preventedDuplicates: 0,
+    preventedDuplicates: await countDuplicateAttempts(),
   };
 }
