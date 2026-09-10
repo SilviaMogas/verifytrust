@@ -21,6 +21,8 @@ const kvUrl = process.env.KV_REST_API_URL?.replace(/\/$/, "");
 const kvToken = process.env.KV_REST_API_TOKEN;
 
 const useKv = Boolean(kvUrl && kvToken);
+// Serverless instances do not share a filesystem, so a file store there cannot be read back.
+const fileStoreDurable = !process.env.VERCEL;
 let mutationQueue = Promise.resolve();
 
 function withLock<T>(fn: () => Promise<T>): Promise<T> {
@@ -32,8 +34,9 @@ function withLock<T>(fn: () => Promise<T>): Promise<T> {
   return operation;
 }
 
-export function storeBackend(): "upstash" | "file" {
-  return useKv ? "upstash" : "file";
+export function storeBackend(): "upstash" | "file" | "ephemeral" {
+  if (useKv) return "upstash";
+  return fileStoreDurable ? "file" : "ephemeral";
 }
 
 async function kvCommand<T>(command: string[]): Promise<T> {
@@ -88,6 +91,7 @@ export async function saveReview(review: PublishedReview) {
     await kvCommand(["LPUSH", "vt:reviews", review.id]);
     return;
   }
+  if (!fileStoreDurable) throw new Error("review store is not durable");
   await withLock(async () => {
     const store = await readFileStore();
     store.reviews = [
