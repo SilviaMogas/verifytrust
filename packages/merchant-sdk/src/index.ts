@@ -3,6 +3,7 @@ import {
   hexToBytes,
   type Hex,
 } from "viem";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import {
   computeIssuerKeyHash,
   getBarretenberg,
@@ -13,6 +14,31 @@ import {
 } from "@verifytrust/sdk";
 
 export type { Credential, Hex, Hex32 };
+
+export function verifyStripeWebhookSignature(
+  payload: string,
+  signature: string,
+  secret: string,
+  now = Math.floor(Date.now() / 1000),
+  tolerance = 300,
+): boolean {
+  const parts = signature.split(",").map((part) => part.trim());
+  const timestamp = Number(parts.find((part) => part.startsWith("t="))?.slice(2));
+  if (!Number.isFinite(timestamp) || Math.abs(now - timestamp) > tolerance) {
+    return false;
+  }
+  const expected = createHmac("sha256", secret)
+    .update(`${timestamp}.${payload}`)
+    .digest();
+  return parts
+    .filter((part) => part.startsWith("v1="))
+    .some((part) => {
+      const value = part.slice(3);
+      if (!/^[0-9a-fA-F]{64}$/.test(value)) return false;
+      const received = Buffer.from(value, "hex");
+      return received.length === expected.length && timingSafeEqual(received, expected);
+    });
+}
 
 export type Purchase = {
   merchantId: Hex32;

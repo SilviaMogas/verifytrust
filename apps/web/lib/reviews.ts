@@ -1,5 +1,6 @@
 import { merchants, products } from "./catalog";
 import { countDuplicateAttempts, listReviews as listStoredReviews } from "./store";
+import { fieldFromString, getOnChainMetrics } from "@verifytrust/sdk";
 
 export type PublishedReview = {
   id: string;
@@ -16,6 +17,10 @@ export type PublishedReview = {
   txHash?: string;
   network?: string;
   publishedAt: string;
+  salt?: string;
+  publicInputs?: [string, string, string, string, string];
+  blockNumber?: number;
+  verifiedAt?: number;
 };
 
 export async function listReviews(filter?: {
@@ -47,10 +52,27 @@ export async function reviewStats(productSlug: string) {
 
 export async function marketplaceMetrics() {
   const reviews = await listReviews();
-  return {
-    merchants: merchants.length,
-    products: products.length,
-    verifiedReviews: reviews.length,
-    preventedDuplicates: await countDuplicateAttempts(),
-  };
+  try {
+    const chain = await getOnChainMetrics({
+      rpcUrl:
+        process.env.RPC_URL ?? "https://ethereum-sepolia-rpc.publicnode.com",
+      chainId: Number(process.env.CHAIN_ID || 11155111),
+      merchantIds: merchants.map((merchant) => fieldFromString(merchant.slug)),
+    });
+    return {
+      merchants: merchants.length,
+      products: products.length,
+      verifiedReviews: chain.totalVerifications,
+      preventedDuplicates: await countDuplicateAttempts(),
+      metricsSource: "sepolia-events",
+    };
+  } catch {
+    return {
+      merchants: merchants.length,
+      products: products.length,
+      verifiedReviews: reviews.length,
+      preventedDuplicates: await countDuplicateAttempts(),
+      metricsSource: "offchain-fallback",
+    };
+  }
 }

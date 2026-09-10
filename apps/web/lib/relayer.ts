@@ -68,6 +68,8 @@ export type RelayerResult =
       network: string;
       explorerUrl?: string;
       relayerAddress: `0x${string}`;
+      blockNumber: number;
+      verifiedAt: number;
     }
   | {
       kind: "reverted";
@@ -138,12 +140,17 @@ export async function submitToRelayer({
       args: [proof, publicInputs, reviewCommitment],
     });
     const receipt = await publicClient.waitForTransactionReceipt({ hash });
+    const block = await publicClient.getBlock({
+      blockNumber: receipt.blockNumber,
+    });
     const details = {
       registryAddress: deployment.verifyTrustRegistry,
       chainId,
       network: chain.name,
       explorerUrl: explorerFor(chainId),
       relayerAddress: account.address,
+      blockNumber: Number(receipt.blockNumber),
+      verifiedAt: Number(block.timestamp),
     };
     if (receipt.status !== "success") {
       return { kind: "reverted", txHash: hash, ...details };
