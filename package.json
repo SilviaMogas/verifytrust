@@ -11,5 +11,8 @@
     "lint": "pnpm --filter web lint",
     "test": "pnpm -r test && (cd packages/contracts && forge test -vv) && (cd packages/circuits && nargo test)",
     "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "next": "16.3.4"
   }
 }
