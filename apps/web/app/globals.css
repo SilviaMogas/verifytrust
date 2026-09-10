@@ -45,6 +45,7 @@ p { color:var(--muted); line-height:1.7; }
 .details div:last-child { border-bottom:0; }
 .details strong { color:var(--ink); text-align:right; overflow-wrap:anywhere; }
 .duplicate-card { display:flex; flex-direction:column; gap:12px; border:1px solid #ff5364; color:#ff8792; padding:20px; margin:20px 0; }
+.duplicate-card.pending { border-color:var(--line); color:var(--muted); }
 .duplicate-card strong { font:700 14px var(--font-geist-mono),monospace; letter-spacing:.1em; }
 .milestones { display:grid; gap:12px; max-width:800px; }
 .milestone { display:grid; grid-template-columns:90px 1fr; gap:18px; border-top:1px solid var(--line); padding:15px 0; color:var(--muted); }

@@ -5,10 +5,32 @@ const explorerFor = (chainId: number) =>
   chainId === 11155111 ? "https://sepolia.etherscan.io" : undefined;
 
 const errorSelector = (error: unknown): string | undefined => {
-  const text = JSON.stringify(error) + "\n" + (error instanceof Error ? error.message : String(error));
-  const selectors = text.match(/0x[0-9a-fA-F]{8,}/g) ?? [];
-  return selectors.find((value) => value.slice(0, 10).toLowerCase() === nullifierAlreadyUsedSelector)?.slice(0, 10).toLowerCase()
-    ?? selectors[0]?.slice(0, 10).toLowerCase();
+  const seen = new Set<object>();
+  const visit = (value: unknown, depth: number): string | undefined => {
+    if (depth > 5 || value === null || value === undefined) return undefined;
+    if (typeof value === "string") {
+      const selectors = value.match(/0x[0-9a-fA-F]{8,}/g) ?? [];
+      return selectors.find(
+        (selector) =>
+          selector.slice(0, 10).toLowerCase() === nullifierAlreadyUsedSelector,
+      )?.slice(0, 10).toLowerCase();
+    }
+    if (typeof value !== "object") return undefined;
+    if (seen.has(value)) return undefined;
+    seen.add(value);
+    if (
+      "errorName" in value &&
+      (value as { errorName?: unknown }).errorName === "NullifierAlreadyUsed"
+    ) {
+      return nullifierAlreadyUsedSelector;
+    }
+    for (const nested of Object.values(value)) {
+      const selector = visit(nested, depth + 1);
+      if (selector) return selector;
+    }
+    return undefined;
+  };
+  return visit(error, 0);
 };
 
 const nullifierAlreadyUsedSelector =
