@@ -6,6 +6,7 @@ export * from "./metrics.js";
 export * from "./proof.js";
 export * from "./review.js";
 export * from "./types.js";
+export * from "./verification.js";
 export { createPublicClient, createWalletClient, defineChain, http } from "viem";
 export { privateKeyToAccount } from "viem/accounts";
 export { sepolia } from "viem/chains";
