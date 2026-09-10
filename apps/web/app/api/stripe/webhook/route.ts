@@ -1,8 +1,18 @@
 import { verifyStripeWebhookSignature } from "@verifytrust/merchant-sdk";
 import { NextResponse } from "next/server";
+import { BodyLimitError, readBodyLimited } from "../../../../lib/body";
 import { recordPaidSession } from "../../../../lib/store";
 
+const maxBodyBytes = 64 * 1024;
+
 export async function POST(request: Request) {
+  const contentLength = Number(request.headers.get("content-length"));
+  if (Number.isFinite(contentLength) && contentLength > maxBodyBytes) {
+    return NextResponse.json(
+      { code: "payload_too_large", message: "Webhook payload is too large." },
+      { status: 413 },
+    );
+  }
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
   if (!secret) {
     return NextResponse.json(
@@ -13,7 +23,21 @@ export async function POST(request: Request) {
       { status: 503 },
     );
   }
-  const payload = await request.text();
+  let payload: string;
+  try {
+    payload = await readBodyLimited(request, maxBodyBytes);
+  } catch (error) {
+    if (error instanceof BodyLimitError) {
+      return NextResponse.json(
+        { code: "payload_too_large", message: "Webhook payload is too large." },
+        { status: 413 },
+      );
+    }
+    return NextResponse.json(
+      { code: "invalid_payload", message: "Invalid webhook payload." },
+      { status: 400 },
+    );
+  }
   const signature = request.headers.get("stripe-signature") ?? "";
   if (!verifyStripeWebhookSignature(payload, signature, secret)) {
     return NextResponse.json(

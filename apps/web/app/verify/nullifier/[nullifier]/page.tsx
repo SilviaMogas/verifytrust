@@ -13,6 +13,26 @@ type ChainVerificationPageProps = {
   params: Promise<{ nullifier: string }>;
 };
 
+function VerificationUnavailable() {
+  return (
+    <main className="shell">
+      <Nav />
+      <section className="hero compact-hero state-page">
+        <div className="eyebrow">VERIFICATION UNAVAILABLE</div>
+        <h1>
+          Verification temporarily unavailable — Ethereum RPC could not be
+          reached, try again
+        </h1>
+        <p>
+          The chain evidence could not be loaded right now. No review text or
+          private purchase information is stored on this page.
+        </p>
+      </section>
+      <Footer />
+    </main>
+  );
+}
+
 function findMerchant(merchantId: string) {
   return merchants.find(
     (merchant) => fieldFromString(merchant.slug).toLowerCase() === merchantId.toLowerCase(),
@@ -34,7 +54,8 @@ export default async function ChainVerificationPage({
   const { nullifier } = await params;
   if (!/^0x[0-9a-fA-F]{64}$/.test(nullifier)) notFound();
   const chainId = Number(process.env.CHAIN_ID || 11155111);
-  let verification;
+  let verification: Awaited<ReturnType<typeof getVerificationByNullifier>>;
+  let rpcUnavailable = false;
   try {
     verification = await getVerificationByNullifier({
       rpcUrl:
@@ -44,7 +65,9 @@ export default async function ChainVerificationPage({
     });
   } catch {
     verification = null;
+    rpcUnavailable = true;
   }
+  if (rpcUnavailable) return <VerificationUnavailable />;
   if (!verification) notFound();
   const merchant = findMerchant(verification.merchantId);
   const product = findProduct(verification.productId, merchant?.slug);

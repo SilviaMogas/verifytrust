@@ -9,8 +9,12 @@ import {
   verifyTrustRegistryAbi,
   type Hex32,
 } from "@verifytrust/sdk";
+import { decodeEventLog, parseAbi } from "viem";
 
 const nullifierAlreadyUsedSelector = "0xa483dd04";
+const reviewVerifiedEvent = parseAbi([
+  "event ReviewVerified(bytes32 indexed nullifier, bytes32 indexed merchantId, bytes32 indexed productId, bytes32 reviewCommitment, uint256 verifiedAt)",
+])[0];
 
 const explorerFor = (chainId: number) =>
   process.env.NEXT_PUBLIC_EXPLORER_URL ||
@@ -69,7 +73,7 @@ export type RelayerResult =
       explorerUrl?: string;
       relayerAddress: `0x${string}`;
       blockNumber: number;
-      verifiedAt: number;
+      verifiedAt?: number;
     }
   | {
       kind: "reverted";
@@ -140,9 +144,6 @@ export async function submitToRelayer({
       args: [proof, publicInputs, reviewCommitment],
     });
     const receipt = await publicClient.waitForTransactionReceipt({ hash });
-    const block = await publicClient.getBlock({
-      blockNumber: receipt.blockNumber,
-    });
     const details = {
       registryAddress: deployment.verifyTrustRegistry,
       chainId,
@@ -150,12 +151,43 @@ export async function submitToRelayer({
       explorerUrl: explorerFor(chainId),
       relayerAddress: account.address,
       blockNumber: Number(receipt.blockNumber),
-      verifiedAt: Number(block.timestamp),
     };
     if (receipt.status !== "success") {
       return { kind: "reverted", txHash: hash, ...details };
     }
-    return { kind: "success", hash, ...details };
+    let verifiedAt: number | undefined;
+    for (const log of receipt.logs) {
+      if (log.address.toLowerCase() !== deployment.verifyTrustRegistry.toLowerCase()) {
+        continue;
+      }
+      try {
+        const decoded = decodeEventLog({
+          abi: [reviewVerifiedEvent],
+          data: log.data,
+          topics: log.topics,
+        });
+        if (
+          decoded.eventName === "ReviewVerified" &&
+          decoded.args.nullifier.toLowerCase() === publicInputs[3].toLowerCase()
+        ) {
+          verifiedAt = Number(decoded.args.verifiedAt);
+          break;
+        }
+      } catch {
+        continue;
+      }
+    }
+    if (verifiedAt === undefined) {
+      try {
+        const block = await publicClient.getBlock({
+          blockNumber: receipt.blockNumber,
+        });
+        verifiedAt = Number(block.timestamp);
+      } catch {
+        verifiedAt = undefined;
+      }
+    }
+    return { kind: "success", hash, ...details, verifiedAt };
   } catch (error) {
     const selector = errorSelector(error);
     if (selector === nullifierAlreadyUsedSelector) {

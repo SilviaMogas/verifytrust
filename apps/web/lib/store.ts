@@ -21,6 +21,16 @@ const kvUrl = process.env.KV_REST_API_URL?.replace(/\/$/, "");
 const kvToken = process.env.KV_REST_API_TOKEN;
 
 const useKv = Boolean(kvUrl && kvToken);
+let mutationQueue = Promise.resolve();
+
+function withLock<T>(fn: () => Promise<T>): Promise<T> {
+  const operation = mutationQueue.then(fn, fn);
+  mutationQueue = operation.then(
+    () => undefined,
+    () => undefined,
+  );
+  return operation;
+}
 
 export function storeBackend(): "upstash" | "file" {
   return useKv ? "upstash" : "file";
@@ -67,7 +77,9 @@ async function readFileStore(): Promise<StoreFile> {
 
 async function writeFileStore(value: StoreFile) {
   await fs.mkdir(path.dirname(storeFile), { recursive: true });
-  await fs.writeFile(storeFile, JSON.stringify(value, null, 2), "utf8");
+  const temporary = `${storeFile}.tmp`;
+  await fs.writeFile(temporary, JSON.stringify(value, null, 2), "utf8");
+  await fs.rename(temporary, storeFile);
 }
 
 export async function saveReview(review: PublishedReview) {
@@ -76,9 +88,14 @@ export async function saveReview(review: PublishedReview) {
     await kvCommand(["LPUSH", "vt:reviews", review.id]);
     return;
   }
-  const store = await readFileStore();
-  store.reviews = [review, ...store.reviews.filter((item) => item.id !== review.id)];
-  await writeFileStore(store);
+  await withLock(async () => {
+    const store = await readFileStore();
+    store.reviews = [
+      review,
+      ...store.reviews.filter((item) => item.id !== review.id),
+    ];
+    await writeFileStore(store);
+  });
 }
 
 export async function getReview(id: string): Promise<PublishedReview | undefined> {
@@ -117,11 +134,13 @@ export async function recordDuplicateAttempt(nullifier: string) {
     await kvCommand(["SADD", "vt:dupes", nullifier]);
     return;
   }
-  const store = await readFileStore();
-  if (!store.duplicateNullifiers.includes(nullifier)) {
-    store.duplicateNullifiers.push(nullifier);
-    await writeFileStore(store);
-  }
+  await withLock(async () => {
+    const store = await readFileStore();
+    if (!store.duplicateNullifiers.includes(nullifier)) {
+      store.duplicateNullifiers.push(nullifier);
+      await writeFileStore(store);
+    }
+  });
 }
 
 export async function recordPaidSession(paidSession: PaidSession) {
@@ -133,9 +152,11 @@ export async function recordPaidSession(paidSession: PaidSession) {
     ]);
     return;
   }
-  const store = await readFileStore();
-  store.paidSessions[paidSession.sessionId] = paidSession;
-  await writeFileStore(store);
+  await withLock(async () => {
+    const store = await readFileStore();
+    store.paidSessions[paidSession.sessionId] = paidSession;
+    await writeFileStore(store);
+  });
 }
 
 export async function getPaidSession(

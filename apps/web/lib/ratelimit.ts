@@ -9,7 +9,9 @@ const maxRequests = 10;
 
 function clientIp(request: Request) {
   return (
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    request.headers.get("x-vercel-forwarded-for")?.trim() ||
+    // The last forwarded address is the one appended by the trusted proxy.
+    request.headers.get("x-forwarded-for")?.split(",").at(-1)?.trim() ||
     request.headers.get("x-real-ip") ||
     "unknown"
   );
@@ -27,25 +29,30 @@ async function upstashLimit(key: string) {
         "content-type": "application/json",
       },
       body: JSON.stringify([
+        ["SET", key, 0, "EX", windowSeconds * 2, "NX"],
         ["INCR", key],
-        ["EXPIRE", key, windowSeconds],
       ]),
       cache: "no-store",
     });
     if (!response.ok) return undefined;
-    const result = (await response.json()) as Array<{ result: number }>;
-    return Number(result[0]?.result) <= maxRequests;
+    const result = (await response.json()) as Array<{ result: number | null }>;
+    const count = Number(result[1]?.result);
+    if (!Number.isFinite(count)) return undefined;
+    return count <= maxRequests;
   } catch {
     return undefined;
   }
 }
 
 export async function rateLimit(request: Request, route: string) {
-  const key = `vt:ratelimit:${route}:${clientIp(request)}`;
+  const key = `${route}:${clientIp(request)}:${Math.floor(Date.now() / 60000)}`;
   const remoteResult = await upstashLimit(key);
   if (remoteResult !== undefined) return remoteResult;
 
   const now = Date.now();
+  for (const [bucketKey, bucket] of buckets) {
+    if (now - bucket.updatedAt > windowSeconds * 1000) buckets.delete(bucketKey);
+  }
   const existing = buckets.get(key);
   const elapsed = existing ? (now - existing.updatedAt) / 1000 : windowSeconds;
   const tokens = Math.min(

@@ -51,7 +51,18 @@ export async function reviewStats(productSlug: string) {
 }
 
 export async function marketplaceMetrics() {
-  const reviews = await listReviews();
+  let reviews: PublishedReview[] = [];
+  try {
+    reviews = await listReviews();
+  } catch {
+    reviews = [];
+  }
+  let preventedDuplicates = 0;
+  try {
+    preventedDuplicates = await countDuplicateAttempts();
+  } catch {
+    preventedDuplicates = 0;
+  }
   try {
     const chain = await getOnChainMetrics({
       rpcUrl:
@@ -63,7 +74,7 @@ export async function marketplaceMetrics() {
       merchants: merchants.length,
       products: products.length,
       verifiedReviews: chain.totalVerifications,
-      preventedDuplicates: await countDuplicateAttempts(),
+      preventedDuplicates,
       metricsSource: "sepolia-events",
     };
   } catch {
@@ -71,7 +82,7 @@ export async function marketplaceMetrics() {
       merchants: merchants.length,
       products: products.length,
       verifiedReviews: reviews.length,
-      preventedDuplicates: await countDuplicateAttempts(),
+      preventedDuplicates,
       metricsSource: "offchain-fallback",
     };
   }
