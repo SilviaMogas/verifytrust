@@ -14,7 +14,8 @@
     "@verifytrust/sdk": "workspace:*",
     "next": "16.3.4",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "viem": "2.21.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

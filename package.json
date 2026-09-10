@@ -9,7 +9,7 @@
     "e2e": "pnpm --filter @verifytrust/circuits e2e",
     "deploy:sepolia": "bash scripts/deploy-sepolia.sh",
     "lint": "pnpm --filter web lint",
-    "test": "pnpm -r test && forge test -vv --root packages/contracts && nargo test packages/circuits",
+    "test": "pnpm -r test && (cd packages/contracts && forge test -vv) && (cd packages/circuits && nargo test)",
     "typecheck": "pnpm -r typecheck"
   }
 }

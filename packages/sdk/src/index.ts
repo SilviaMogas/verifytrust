@@ -7,6 +7,7 @@ export * from "./review.js";
 export * from "./types.js";
 export { createPublicClient, createWalletClient, defineChain, http } from "viem";
 export { privateKeyToAccount } from "viem/accounts";
+export { sepolia } from "viem/chains";
 
 import { getBarretenberg } from "./crypto.js";
 import { computeCredentialCommitment, randomHex32 } from "./crypto.js";
