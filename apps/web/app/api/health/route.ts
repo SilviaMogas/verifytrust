@@ -5,7 +5,9 @@ import { storeBackend } from "../../../lib/store";
 function stripeMode(): "live" | "test" | null {
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key) return null;
-  return key.startsWith("sk_live_") || key.startsWith("rk_live_") ? "live" : "test";
+  if (key.startsWith("sk_live_") || key.startsWith("rk_live_")) return "live";
+  if (key.startsWith("sk_test_") || key.startsWith("rk_test_")) return "test";
+  return null;
 }
 
 export async function GET() {
