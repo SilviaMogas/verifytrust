@@ -39,7 +39,7 @@ PROVE THE PURCHASE. PROTECT THE PERSON.
 | --- | --- |
 | Open source | Apache-2.0 license in `LICENSE` and the repository. |
 | Independently buildable | `pnpm verify:deployment` rebuilds the circuit and verifier, checks `CHECKSUMS.txt`, builds the Solidity contracts, and compares the Sepolia bytecode. |
-| Working software | Live demo at https://verifytrust2.vercel.app and the Longhand pilot at `/merchant/longhand`, including the Stripe test-mode purchase and verified-review flow. |
+| Working software | Live demo at https://verifytrust2.vercel.app and the Longhand pilot at `/merchant/longhand`, including the real $1 Stripe purchase and verified-review flow (Stripe mode is reported by `/api/health` as `stripeMode`). |
 | Verifiable traction | `/api/stats` reports Sepolia `ReviewVerified` event totals and distinct merchants, with the published review transaction [0x765e7b93…](https://sepolia.etherscan.io/tx/0x765e7b93622f61e37a12f6382cae9bb8fba0759f7bda7ec23f3ee9de5544a745). The requested `0xec1219…` prefix was checked and does not resolve to a VerifyTrust Sepolia transaction; it is not claimed as project evidence. |
 | Exclusion criteria | Testnet-only deployment, explicit limitations, open-source code, privacy documentation, and the demo-only issuer/relayer threat model are documented rather than presented as production guarantees. |
 | Repository status | repository visibility: to be set public before submission |
