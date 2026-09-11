@@ -209,7 +209,7 @@ export default async function Home() {
             </article>
           ))}
         </div>
-        <Link className="text-link" href="/octant#history">
+        <Link className="text-link" href="/octant#project-history">
           Read the project history
         </Link>
       </section>
