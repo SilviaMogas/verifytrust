@@ -57,11 +57,11 @@ export async function marketplaceMetrics() {
   } catch {
     reviews = [];
   }
-  let preventedDuplicates = 0;
+  let preventedDuplicates: number | null = 0;
   try {
     preventedDuplicates = await countDuplicateAttempts();
   } catch {
-    preventedDuplicates = 0;
+    preventedDuplicates = null;
   }
   try {
     const chain = await getOnChainMetrics({

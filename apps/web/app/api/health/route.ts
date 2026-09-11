@@ -2,11 +2,20 @@ import { deployments } from "@verifytrust/sdk";
 import { NextResponse } from "next/server";
 import { storeBackend } from "../../../lib/store";
 
+function stripeMode(): "live" | "test" | null {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) return null;
+  if (key.startsWith("sk_live_") || key.startsWith("rk_live_")) return "live";
+  if (key.startsWith("sk_test_") || key.startsWith("rk_test_")) return "test";
+  return null;
+}
+
 export async function GET() {
   const chainId = Number(process.env.CHAIN_ID || 31337);
   return NextResponse.json({
     store: storeBackend(),
     stripe: Boolean(process.env.STRIPE_SECRET_KEY),
+    stripeMode: stripeMode(),
     chain: {
       configured: Boolean(
         process.env.RPC_URL &&
