@@ -9,7 +9,7 @@ export const revalidate = 60;
 
 export default async function Home() {
   const metrics = await marketplaceMetrics();
-  const reviews = await listReviews().catch(() => []);
+  const reviews = await listReviews().catch(() => null);
   const membership = products[0];
 
   return (
@@ -102,7 +102,15 @@ export default async function Home() {
             <h2>EXPLORE THE LATEST REVIEWS</h2>
           </div>
         </div>
-        {reviews.length === 0 ? (
+        {reviews === null ? (
+          <div className="empty-state">
+            <h3>Reviews temporarily unavailable</h3>
+            <p>
+              The review store could not be reached. On-chain verifications
+              are unaffected; try again shortly.
+            </p>
+          </div>
+        ) : reviews.length === 0 ? (
           <div className="empty-state">
             <h3>No verified reviews yet</h3>
             <p>

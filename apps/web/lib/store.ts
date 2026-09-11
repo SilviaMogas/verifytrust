@@ -138,6 +138,7 @@ export async function recordDuplicateAttempt(nullifier: string) {
     await kvCommand(["SADD", "vt:dupes", nullifier]);
     return;
   }
+  if (!fileStoreDurable) return;
   await withLock(async () => {
     const store = await readFileStore();
     if (!store.duplicateNullifiers.includes(nullifier)) {
@@ -178,5 +179,6 @@ export async function getPaidSession(
 
 export async function countDuplicateAttempts(): Promise<number> {
   if (useKv) return Number(await kvCommand<number>(["SCARD", "vt:dupes"]));
+  if (!fileStoreDurable) throw new Error("review store is not durable");
   return (await readFileStore()).duplicateNullifiers.length;
 }
