@@ -20,3 +20,9 @@ description: Run the Verify Trust browser demo against existing Sepolia deployme
 - `RELAYER_PRIVATE_KEY`: funded Sepolia-only signing wallet.
 - `DEMO_ISSUER_PRIVATE_KEY`: approved NOVA GOODS issuer.
 - On the tested machine these were provisioned in `/home/ubuntu/.verifytrust/verifytrust-sepolia-keys.txt`. Parse values without printing them. Do not copy secrets into repository files or artifacts.
+
+## Read-only marketplace and homepage checks
+- UI-only discovery tests need neither issuer/relayer keys nor payments. Reuse a stable existing server with Sepolia `CHAIN_ID` and `RPC_URL`; do not enter checkout or submit proofs.
+- Marketplace verification metrics can count merchant-filtered Sepolia events while review cards come from a separate store. Compare `getOnChainMetrics` using the configured merchant IDs, not the registry's global total. An empty local review list can coexist with a nonzero on-chain count; report both instead of inventing persisted review data.
+- Review-store outage and successful empty results are distinct runtime states. For reversible failure testing, use only a dedicated disposable `REVIEW_STORE_FILE` with KV disabled; never alter an existing real store. Malformed JSON triggers a read failure. Remove the test-created file and reload to verify recovery, restoring the exact original state.
+- Responsive horizontal carousels may intentionally have `scrollWidth > clientWidth`; separately check document-level width and use a real touch drag/scroll. Validate all pilot images/labels after bringing them into view.
